@@ -6,10 +6,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 // ============================================================
 
 // ゲームの制限時間です。テスト中だけ短くしたい場合は、ここを 10 などに変えます。
-const GAME_SECONDS = 10;
-
-// モンスターの最大HPです。今回は「命中したら倒れる」を見せたいので100にしています。
-const MONSTER_MAX_HP = 100;
+const GAME_SECONDS = 15;
 
 // 赤緑メガネの赤フィルムが左目なら "left"、右目なら "right" にします。
 // 立体感が逆に見えるときはここを "right" に変えてください。
