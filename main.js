@@ -6,7 +6,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 // ============================================================
 
 // ゲームの制限時間です。テスト中だけ短くしたい場合は、ここを 10 などに変えます。
-const GAME_SECONDS = 20;
+const GAME_SECONDS = 30;
 
 // モンスターの最大HPです。今回は「命中したら倒れる」を見せたいので100にしています。
 const MONSTER_MAX_HP = 100;
@@ -43,10 +43,11 @@ const restartButton = document.getElementById("restartButton");
 // three.js の基本セット
 // ============================================================
 
-// シーンは3D空間全体です。背景は暗くして、元気玉と赤緑表示を見やすくします。
+// シーンは3D空間全体です。
+// テーマがジャングルなので、黒ではなく深い森の緑にします。
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x020205);
-scene.fog = new THREE.Fog(0x020205, 18, 42);
+scene.background = new THREE.Color(0x06140b);
+scene.fog = new THREE.Fog(0x06140b, 10, 34);
 
 // カメラは正面固定です。モンスターを中央に置いたまま狙えるようにします。
 const camera = new THREE.PerspectiveCamera(
@@ -114,47 +115,146 @@ composeScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), composeMaterial))
 // ライト
 // ============================================================
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+scene.add(new THREE.AmbientLight(0xffffff, 1.35));
 
 const keyLight = new THREE.PointLight(0xffffff, 2.5);
 keyLight.position.set(5, 7, 6);
 scene.add(keyLight);
 
-const greenLight = new THREE.PointLight(0x54ff67, 2.0);
+const greenLight = new THREE.PointLight(0x54ff67, 2.8);
 greenLight.position.set(-5, 3, 7);
 scene.add(greenLight);
 
-const redLight = new THREE.PointLight(0xff3030, 1.7);
+const redLight = new THREE.PointLight(0xff3030, 2.2);
 redLight.position.set(5, 2, 5);
 scene.add(redLight);
 
 // ============================================================
-// 背景の星
+// ジャングル背景
 // ============================================================
 
-const starGeometry = new THREE.BufferGeometry();
-const starPositions = [];
+// 背景の森をまとめて動かせるように、ひとつのグループに入れます。
+const jungle = new THREE.Group();
+scene.add(jungle);
 
-// 点をたくさん置いて、宇宙っぽい背景にします。
-for (let i = 0; i < 420; i++) {
-  starPositions.push(
-    THREE.MathUtils.randFloatSpread(34),
-    THREE.MathUtils.randFloatSpread(20) + 4,
-    THREE.MathUtils.randFloat(-28, -8)
-  );
-}
-
-starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
-const stars = new THREE.Points(
-  starGeometry,
-  new THREE.PointsMaterial({
-    color: 0xaaffc4,
-    size: 0.035,
-    transparent: true,
-    opacity: 0.72
+// 地面です。モンスターの足元に暗い草地を置きます。
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(36, 34),
+  new THREE.MeshStandardMaterial({
+    color: 0x123016,
+    emissive: 0x031006,
+    emissiveIntensity: 0.4,
+    roughness: 0.95
   })
 );
-scene.add(stars);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(0, -2.15, -4);
+jungle.add(ground);
+
+// 遠景の木を作る関数です。
+// 円柱を幹、丸い球を葉のかたまりとして使っています。
+function createJungleTree(x, z, scale) {
+  const tree = new THREE.Group();
+
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12 * scale, 0.22 * scale, 3.4 * scale, 10),
+    new THREE.MeshStandardMaterial({
+      color: 0x3a2414,
+      emissive: 0x120805,
+      emissiveIntensity: 0.35,
+      roughness: 0.9
+    })
+  );
+  trunk.position.y = -0.65 * scale;
+  tree.add(trunk);
+
+  const leafMaterial = new THREE.MeshStandardMaterial({
+    color: 0x1d6b2a,
+    emissive: 0x063815,
+    emissiveIntensity: 0.65,
+    roughness: 0.8
+  });
+
+  for (let i = 0; i < 5; i++) {
+    const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.78 * scale, 18, 12), leafMaterial);
+    canopy.scale.set(1.15, 0.72, 0.85);
+    canopy.position.set(
+      Math.sin(i * 1.8) * 0.44 * scale,
+      (0.95 + i * 0.18) * scale,
+      Math.cos(i * 1.3) * 0.26 * scale
+    );
+    tree.add(canopy);
+  }
+
+  tree.position.set(x, -1.25, z);
+  return tree;
+}
+
+// 左右と奥に木を配置して、中央のモンスターを囲むような森にします。
+const treePositions = [
+  [-8.5, -7.5, 1.35],
+  [-5.8, -10.5, 1.75],
+  [-3.2, -13.0, 1.45],
+  [3.2, -12.0, 1.55],
+  [6.2, -9.2, 1.65],
+  [8.4, -7.2, 1.3],
+  [-9.8, -2.2, 1.0],
+  [9.7, -2.6, 1.05]
+];
+
+treePositions.forEach(([x, z, scale]) => {
+  jungle.add(createJungleTree(x, z, scale));
+});
+
+// 手前に大きな葉っぱを置くと、かなりジャングルらしくなります。
+// Planeを葉っぱ型に見せるため、細長くして少し回転させています。
+const frontLeafMaterial = new THREE.MeshStandardMaterial({
+  color: 0x2f8f34,
+  emissive: 0x063e12,
+  emissiveIntensity: 0.6,
+  side: THREE.DoubleSide,
+  roughness: 0.7
+});
+
+for (let i = 0; i < 16; i++) {
+  const leaf = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 1.85), frontLeafMaterial);
+  const side = i % 2 === 0 ? -1 : 1;
+  leaf.position.set(
+    side * THREE.MathUtils.randFloat(5.2, 9.5),
+    THREE.MathUtils.randFloat(-1.2, 2.8),
+    THREE.MathUtils.randFloat(-1.5, 2.8)
+  );
+  leaf.rotation.set(
+    THREE.MathUtils.randFloat(-0.4, 0.5),
+    side * THREE.MathUtils.randFloat(0.7, 1.25),
+    side * THREE.MathUtils.randFloat(0.25, 0.9)
+  );
+  leaf.scale.setScalar(THREE.MathUtils.randFloat(0.8, 1.7));
+  jungle.add(leaf);
+}
+
+// 光る虫のような粒です。
+// 宇宙の星ではなく、ジャングルの奥で小さく光る点として見せます。
+const fireflyGeometry = new THREE.BufferGeometry();
+const fireflyPositions = [];
+for (let i = 0; i < 120; i++) {
+  fireflyPositions.push(
+    THREE.MathUtils.randFloatSpread(18),
+    THREE.MathUtils.randFloat(-0.6, 5.8),
+    THREE.MathUtils.randFloat(-12, 1)
+  );
+}
+fireflyGeometry.setAttribute("position", new THREE.Float32BufferAttribute(fireflyPositions, 3));
+const fireflies = new THREE.Points(
+  fireflyGeometry,
+  new THREE.PointsMaterial({
+    color: 0xdfff65,
+    size: 0.055,
+    transparent: true,
+    opacity: 0.8
+  })
+);
+jungle.add(fireflies);
 
 // ============================================================
 // モンスター
@@ -166,18 +266,28 @@ let monsterRadius = 1.8;
 let monsterDefeated = false;
 let monsterInitialScale = new THREE.Vector3(1, 1, 1);
 
+// 赤緑メガネ表示では青い色が暗く見えやすいので、
+// モンスターは「明るい黄緑寄りの不透明素材」にします。
+// ここを変えるとGLBモンスター全体の見え方をまとめて調整できます。
+function createMonsterMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: 0xf2ffe8,
+    emissive: 0x7dff55,
+    emissiveIntensity: 0.85,
+    metalness: 0.05,
+    roughness: 0.35,
+    transparent: false,
+    opacity: 1,
+    side: THREE.DoubleSide
+  });
+}
+
 // GLBがないときでもゲームが動くように、コードだけでモンスターを作ります。
 function createFallbackMonster() {
   const group = new THREE.Group();
   group.name = "FallbackMonster";
 
-  const bodyMaterial = new THREE.MeshStandardMaterial({
-    color: 0x2b6cff,
-    emissive: 0x071d42,
-    emissiveIntensity: 0.75,
-    roughness: 0.25,
-    metalness: 0.15
-  });
+  const bodyMaterial = createMonsterMaterial();
 
   const hornMaterial = new THREE.MeshStandardMaterial({
     color: 0xfff06a,
@@ -298,19 +408,11 @@ function loadMonster() {
         const loadedModel = gltf.scene;
         loadedModel.scale.set(2.8, 2.8, 2.8);
 
-        // 赤緑表示で見やすいように、青く発光する素材へ置き換えます。
+        // 赤緑表示で見やすいように、不透明で明るい素材へ置き換えます。
+        // 元のGLB素材が暗かったり半透明でも、ゲーム中ははっきり見えます。
         loadedModel.traverse((child) => {
           if (!child.isMesh) return;
-          child.material = new THREE.MeshStandardMaterial({
-            color: 0x2b6cff,
-            transparent: true,
-            opacity: 0.9,
-            metalness: 0.2,
-            roughness: 0.08,
-            emissive: 0x0a1a3a,
-            emissiveIntensity: 0.7,
-            side: THREE.DoubleSide
-          });
+          child.material = createMonsterMaterial();
         });
 
         // モデルの中心を親グループの原点に合わせます。
@@ -579,8 +681,9 @@ function animate() {
     }
   }
 
-  // 星を少しだけ回して、奥行きがあるように見せます。
-  stars.rotation.y += 0.0006;
+  // ジャングルの葉っぱが少し揺れているように見せます。
+  jungle.rotation.y = Math.sin(t * 0.25) * 0.012;
+  fireflies.position.y = Math.sin(t * 1.5) * 0.08;
 
   // スコープがモンスターに乗っている時だけ光らせます。
   scopeEl.classList.toggle("hit-ready", isScopeOnMonster() && !finished);
@@ -594,7 +697,7 @@ function animate() {
     spiritBall.rotation.x += 0.009;
   }
 
-  // 60秒たったら自動で元気玉が飛んでいきます。
+  // 制限時間が終わったら自動で元気玉が飛んでいきます。
   if (started && !launchStarted && getRemainingSeconds() <= 0) {
     startLaunch();
   }
