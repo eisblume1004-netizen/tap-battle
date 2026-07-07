@@ -1,42 +1,98 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
 <meta charset="UTF-8">
-<title>3D Sapphire Anaglyph - Zoom Up</title>
-<link rel="stylesheet" href="./style.css">
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/tree@0.180.0/examples/jsm/"
-  }
-}
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Monster Battle</title>
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
-  <!-- ==========================
-ゲームUI
-========================== -->
+
+<!-- ===========================
+     HP・タイマー
+=========================== -->
+
 <div id="gameUI">
 
-  <div class="status">
-    <div class="label">❤️ HP</div>
+    <div class="status">
 
-    <div class="hpBox">
-      <div id="hpBar"></div>
+        <div class="label">
+            ❤️ HP
+        </div>
+
+        <div class="hpBox">
+            <div id="hpBar"></div>
+        </div>
+
+        <div id="hpText">
+            50 / 50
+        </div>
+
     </div>
 
-    <div id="hpText">50 / 50</div>
-  </div>
 
-  <div class="status">
-    <div class="label">⏰ TIME</div>
+    <div class="status">
 
-    <div id="timer">60</div>
-  </div>
+        <div class="label">
+            ⏰ TIME
+        </div>
+
+        <div id="timer">
+            60
+        </div>
+
+    </div>
 
 </div>
-<img id="scope" src="./images/scope.png" alt="scope">
-<script type="module" src="./main.js"></script>
+
+
+<!-- ===========================
+     GAME CLEAR
+=========================== -->
+
+<div id="clearScreen" class="resultScreen">
+
+    <h1>MISSION COMPLETE!</h1>
+
+    <button onclick="location.reload()">
+        RESTART
+    </button>
+
+</div>
+
+
+<!-- ===========================
+     GAME OVER
+=========================== -->
+
+<div id="gameOverScreen" class="resultScreen">
+
+    <h1>GAME OVER</h1>
+
+    <button onclick="location.reload()">
+        RESTART
+    </button>
+
+</div>
+
+
+<!-- ===========================
+     スコープ
+=========================== -->
+
+<img
+id="scope"
+src="./images/scope.png"
+alt="scope"
+>
+
+
+<script type="module" src="main.js"></script>
+
 </body>
 </html>
