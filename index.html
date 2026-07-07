@@ -1,98 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Monster Battle</title>
-
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monster Battle 60</title>
+  <link rel="stylesheet" href="./style.css" />
 </head>
-
 <body>
-
-<!-- ===========================
-     HP・タイマー
-=========================== -->
-
-<div id="gameUI">
-
-    <div class="status">
-
-        <div class="label">
-            ❤️ HP
+  <div class="hud">
+    <div class="topbar">
+      <div class="status-group">
+        <div class="status">
+          <span class="label">TIME</span>
+          <span class="value" id="timer">60.0</span>
         </div>
-
-        <div class="hpBox">
-            <div id="hpBar"></div>
+        <div class="status">
+          <span class="label">POWER</span>
+          <span class="value" id="power">0</span>
         </div>
-
-        <div id="hpText">
-            50 / 50
+        <div class="status">
+          <span class="label">MONSTER HP</span>
+          <span class="value" id="hp">100</span>
         </div>
-
+      </div>
     </div>
 
+    <button class="charge-button" id="chargeButton" type="button">連打して元気玉をためる</button>
+    <div class="scope" id="scope" aria-hidden="true"></div>
 
-    <div class="status">
-
-        <div class="label">
-            ⏰ TIME
-        </div>
-
-        <div id="timer">
-            60
-        </div>
-
+    <div class="result" id="result">
+      <div class="result-panel">
+        <h1 class="result-title" id="resultTitle">GAME CLEAR</h1>
+        <p class="result-message" id="resultMessage">命中！モンスターを倒した！</p>
+        <button class="restart-button" id="restartButton" type="button">もう一回</button>
+      </div>
     </div>
+  </div>
 
-</div>
-
-
-<!-- ===========================
-     GAME CLEAR
-=========================== -->
-
-<div id="clearScreen" class="resultScreen">
-
-    <h1>MISSION COMPLETE!</h1>
-
-    <button onclick="location.reload()">
-        RESTART
-    </button>
-
-</div>
-
-
-<!-- ===========================
-     GAME OVER
-=========================== -->
-
-<div id="gameOverScreen" class="resultScreen">
-
-    <h1>GAME OVER</h1>
-
-    <button onclick="location.reload()">
-        RESTART
-    </button>
-
-</div>
-
-
-<!-- ===========================
-     スコープ
-=========================== -->
-
-<img
-id="scope"
-src="./images/scope.png"
-alt="scope"
->
-
-
-<script type="module" src="main.js"></script>
-
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
