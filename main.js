@@ -141,7 +141,7 @@ const enemyScreen = worldToScreen(enemy.position, camera);
 const edgeWorld = enemy.position.clone().add(
   new THREE.Vector3(currentenemyWorldRadius, 0, 0)
 );
-
+  
 const edgeScreen = worldToScreen(edgeWorld, camera);
 
 const hitRadiusPx = Math.hypot(
@@ -268,48 +268,10 @@ function animate() {
   if (enemy) {
     const t = Date.now() * 0.001;
 
-    // 奥→手前（速度も少し上げてキレを出す）
-    enemy.position.z += 0.22;
-
     // 左右・上下にふわっと揺れる
     enemy.position.x = Math.sin(t * 0.9) * 1.4;
-    enemy.position.y = Math.sin(t * 1.3) * 0.5;
-
-    // 手前に来すぎたらリセット（以前よりずっと手前まで許可）
-    if (enemy.position.z > END_Z) {
-      enemy.position.z = START_Z;
-    }
-
-    // ---- スケール計算：近づくほど急激に大きくする（イージング） ----
-    // 0(奥) 〜 1(カメラ直前) の進行度
-    const progress = THREE.MathUtils.clamp(
-      (enemy.position.z - START_Z) / (END_Z - START_Z),
-      0,
-      1
-    );
-    // 3乗イージングで、手前に来た瞬間の「グワッ」とした加速感をさらに強調
-    const eased = progress * progress * progress;
-    const d = THREE.MathUtils.lerp(MIN_SCALE_FACTOR, MAX_SCALE_FACTOR, eased);
-
-    enemy.scale.set(BASE_SCALE * d, BASE_SCALE * d, BASE_SCALE * d);
-
-    // 当たり判定用に、今の宝石のワールド座標上の半径を更新しておく
-    currentenemyWorldRadius = unitRadius * BASE_SCALE * d;
-
-    // ---- フェード計算 ----
-    // 序盤(progress: 0→FADE_RANGE)だけフワッと現れる。
-    // 終盤はフェードアウトさせず、最後まで色をフルで残したまま
-    // （奥に戻る瞬間だけ一瞬で切り替わる）。
-    const fade = THREE.MathUtils.clamp(progress / FADE_RANGE, 0, 1);
-
-    for (const mat of enemyMaterials) {
-      mat.opacity = BASE_enemy_OPACITY * fade;
-    }
-    for (const mat of wireMaterials) {
-      mat.opacity = BASE_WIRE_OPACITY * fade;
-    }
-  }
-
+    enemy.position.y = Math.sin(t * 1.3) * 0.5
+    
   // ---- 左目・右目それぞれの映像を描画 ----
   // cameraは直接render()に渡していないため、matrixWorldが自動更新されない。
   // stereo.update()はこのmatrixWorldを元に左右のカメラ位置を計算するので、
