@@ -135,29 +135,37 @@ function worldToScreen(vector3, cam) {
 // クリックした瞬間、スコープ(=クリック位置)と宝石が画面上で重なっているか判定
 renderer.domElement.addEventListener("click", () => {
   if (!enemy) return;
+const enemyScreen = worldToScreen(enemy.position, camera);
 
-  const enemyScreen = worldToScreen(enemy.position, camera);
+// 宝石の見た目上の半径を求めるため、中心から半径分ずらした点も画面座標に変換する
+const edgeWorld = enemy.position.clone().add(
+  new THREE.Vector3(currentenemyWorldRadius, 0, 0)
+);
 
-  // 宝石の見た目上の半径を求めるため、中心から半径分ずらした点も画面座標に変換する
-  
-  const edgeScreen = worldToScreen(edgeWorld, camera);
-  const hitRadiusPx = Math.hypot(edgeScreen.x - enconst edgeWorld = enemy.position.clone().add(new THREE.Vector3(currentenemyWorldRadius, 0, 0));emyScreen.x, edgeScreen.y - enemyScreen.y);
+const edgeScreen = worldToScreen(edgeWorld, camera);
 
-  const dx = mouseX - enemyScreen.x;
-  const dy = mouseY - enemyScreen.y;
-  const distPx = Math.hypot(dx, dy);
+const hitRadiusPx = Math.hypot(
+  edgeScreen.x - enemyScreen.x,
+  edgeScreen.y - enemyScreen.y
+);
 
-  if (distPx <= hitRadiusPx) {
-    enemyHP--;
+const dx = mouseX - enemyScreen.x;
+const dy = mouseY - enemyScreen.y;
+const distPx = Math.hypot(dx, dy);
 
-    console.log("残りHP：" + enemyHP);
+if (distPx <= hitRadiusPx) {
+  enemyHP--;
 
-    scopeEl.style.filter = "drop-shadow(0 0 12px red) brightness(1.5)";
-    setTimeout(() => { scopeEl.style.filter = ""; }, 150);
+  console.log("残りHP：" + enemyHP);
 
-    if (enemyHP <= 0) {
-        console.log("敵を倒した！");
-    }
+  scopeEl.style.filter = "drop-shadow(0 0 12px red) brightness(1.5)";
+  setTimeout(() => {
+    scopeEl.style.filter = "";
+  }, 150);
+
+  if (enemyHP <= 0) {
+    console.log("敵を倒した！");
+  }
 }
 });
 
