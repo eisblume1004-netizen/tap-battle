@@ -1,62 +1,90 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-// ======================
-// scene
-// ======================
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
+// ============================================================
+// 基本設定
+// ============================================================
 
-// ======================
-// camera（飛び出し強め）
-// near を小さくして、かなり近くまで来ても消えないようにする
-// ======================
+// ゲームの制限時間です。テスト中だけ短くしたい場合は、ここを 10 などに変えます。
+const GAME_SECONDS = 60;
+
+// モンスターの最大HPです。今回は「命中したら倒れる」を見せたいので100にしています。
+const MONSTER_MAX_HP = 100;
+
+// 赤緑メガネの赤フィルムが左目なら "left"、右目なら "right" にします。
+// 立体感が逆に見えるときはここを "right" に変えてください。
+const RED_EYE = "left";
+
+// 自分のGLBモンスターを使う場合は、models フォルダにGLBを入れてください。
+// このコードは次の順番でモデルを探します。
+// 1. index.html と同じ場所の models/monster_diorama.glb
+// 2. ひとつ上の階層の models/monster_diorama.glb
+// 今回の元コードに合わせて、ファイル名は monster_diorama.glb を優先しています。
+const MONSTER_MODEL_PATHS = [
+  "./models/monster_diorama.glb",
+  "../models/monster_diorama.glb"
+];
+
+// ============================================================
+// 画面上の部品を取得
+// ============================================================
+
+const timerEl = document.getElementById("timer");
+const powerEl = document.getElementById("power");
+const hpEl = document.getElementById("hp");
+const scopeEl = document.getElementById("scope");
+const chargeButton = document.getElementById("chargeButton");
+const resultEl = document.getElementById("result");
+const resultTitleEl = document.getElementById("resultTitle");
+const resultMessageEl = document.getElementById("resultMessage");
+const restartButton = document.getElementById("restartButton");
+
+// ============================================================
+// three.js の基本セット
+// ============================================================
+
+// シーンは3D空間全体です。背景は暗くして、元気玉と赤緑表示を見やすくします。
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x020205);
+scene.fog = new THREE.Fog(0x020205, 18, 42);
+
+// カメラは正面固定です。モンスターを中央に置いたまま狙えるようにします。
 const camera = new THREE.PerspectiveCamera(
   45,
   window.innerWidth / window.innerHeight,
   0.01,
   1000
 );
-camera.position.set(0, 1, 14);
+camera.position.set(0, 1.2, 13);
+camera.lookAt(0, 0.6, 0);
 
-// ======================
-// renderer
-// ======================
+// レンダラーは実際に3Dを描く担当です。
 const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ======================
-// 赤緑アナグリフ（自作の設定に合わせて自前実装）
-// ======================
-// three.jsのAnaglyphEffectは「赤・シアン(青緑)」の組み合わせ用に
-// 色変換が最適化されているため、赤緑フィルムだとそのままでは使えない。
-// なので、左目用・右目用の映像をそれぞれ描画してから、
-// 赤チャンネル・緑チャンネルに直接割り当てる方式にする。
+// ============================================================
+// 赤緑メガネ用の手動アナグリフ合成
+// ============================================================
 
-// ---- 重要：どちらの目に赤フィルムを貼ったか ----
-// "left"  = 左目が赤、右目が緑 ←テスト画像で確認した結果、こちらが正解
-// "right" = 右目が赤、左目が緑
-// もし飛び出るはずが逆に引っ込んで見える・違和感がある場合は、
-// 左右を間違えている可能性が高いので、ここを反対の値に変えてみてください。
-const RED_EYE = "left";
-
+// StereoCamera は左目用・右目用のカメラを作ってくれます。
 const stereo = new THREE.StereoCamera();
 stereo.aspect = camera.aspect;
-stereo.eyeSep = 0.1; // 視差の強さ
-camera.focus = 12;   // ゼロ視差面(world z = 14-12 = 2)。この位置より手前に来ると飛び出して見える
+stereo.eyeSep = 0.13;
+camera.focus = 12;
 
-// 左目・右目の映像を一旦描き込むためのレンダーターゲット
+// 左目用と右目用の絵を、いったん別々の画面に描きます。
 const rtLeft = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
 const rtRight = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight);
 
-// 赤緑合成用のフルスクリーンシェーダー
+// 左右の絵を赤チャンネル・緑チャンネルに合成するための専用シーンです。
 const composeScene = new THREE.Scene();
 const composeCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 const composeMaterial = new THREE.ShaderMaterial({
   uniforms: {
-    tRedEye: { value: null },   // 赤フィルム側の目に見せる映像
-    tGreenEye: { value: null }, // 緑フィルム側の目に見せる映像
+    tRedEye: { value: null },
+    tGreenEye: { value: null }
   },
   vertexShader: `
     varying vec2 vUv;
@@ -72,10 +100,8 @@ const composeMaterial = new THREE.ShaderMaterial({
     void main() {
       vec3 redEyeColor = texture2D(tRedEye, vUv).rgb;
       vec3 greenEyeColor = texture2D(tGreenEye, vUv).rgb;
-      // 色そのものではなく明るさ(輝度)に変換してから
-      // 赤チャンネル・緑チャンネルに割り当てる。
-      // （青系オブジェクトはR,Gの生の値が低く暗くなりがちなので、
-      //   輝度ベースにすることで見えやすくする）
+
+      // 色そのものではなく明るさを使うと、赤緑メガネで形が見やすくなります。
       float redLum = dot(redEyeColor, vec3(0.299, 0.587, 0.114));
       float greenLum = dot(greenEyeColor, vec3(0.299, 0.587, 0.114));
       gl_FragColor = vec4(redLum, greenLum, 0.0, 1.0);
@@ -84,198 +110,521 @@ const composeMaterial = new THREE.ShaderMaterial({
 });
 composeScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), composeMaterial));
 
-// ======================
-// light（宝石見えるように）
-// ======================
-scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-const light1 = new THREE.PointLight(0xffffff, 2);
-light1.position.set(5, 5, 5);
-scene.add(light1);
-const light2 = new THREE.PointLight(0xffffff, 1.5);
-light2.position.set(-5, 3, 5);
-scene.add(light2);
+// ============================================================
+// ライト
+// ============================================================
 
-// ======================
-// GLB
-// ======================
-const loader = new GLTFLoader();
-let enemy;
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
 
-//HP
-let enemyHP = 50;
-// フェードイン・フェードアウトのために、生成したマテリアルへの参照を保持しておく
-const enemyMaterials = [];
-const wireMaterials = [];
+const keyLight = new THREE.PointLight(0xffffff, 2.5);
+keyLight.position.set(5, 7, 6);
+scene.add(keyLight);
 
-// ======================
-// ターゲットスコープ（マウス追従＋当たり判定）
-// ======================
-const scopeEl = document.getElementById("scope");
+const greenLight = new THREE.PointLight(0x54ff67, 2.0);
+greenLight.position.set(-5, 3, 7);
+scene.add(greenLight);
+
+const redLight = new THREE.PointLight(0xff3030, 1.7);
+redLight.position.set(5, 2, 5);
+scene.add(redLight);
+
+// ============================================================
+// 背景の星
+// ============================================================
+
+const starGeometry = new THREE.BufferGeometry();
+const starPositions = [];
+
+// 点をたくさん置いて、宇宙っぽい背景にします。
+for (let i = 0; i < 420; i++) {
+  starPositions.push(
+    THREE.MathUtils.randFloatSpread(34),
+    THREE.MathUtils.randFloatSpread(20) + 4,
+    THREE.MathUtils.randFloat(-28, -8)
+  );
+}
+
+starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+const stars = new THREE.Points(
+  starGeometry,
+  new THREE.PointsMaterial({
+    color: 0xaaffc4,
+    size: 0.035,
+    transparent: true,
+    opacity: 0.72
+  })
+);
+scene.add(stars);
+
+// ============================================================
+// モンスター
+// ============================================================
+
+let monster;
+let monsterHP = MONSTER_MAX_HP;
+let monsterRadius = 1.8;
+let monsterDefeated = false;
+let monsterInitialScale = new THREE.Vector3(1, 1, 1);
+
+// GLBがないときでもゲームが動くように、コードだけでモンスターを作ります。
+function createFallbackMonster() {
+  const group = new THREE.Group();
+  group.name = "FallbackMonster";
+
+  const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: 0x2b6cff,
+    emissive: 0x071d42,
+    emissiveIntensity: 0.75,
+    roughness: 0.25,
+    metalness: 0.15
+  });
+
+  const hornMaterial = new THREE.MeshStandardMaterial({
+    color: 0xfff06a,
+    emissive: 0x3c2a00,
+    emissiveIntensity: 0.6,
+    roughness: 0.18
+  });
+
+  const eyeMaterial = new THREE.MeshStandardMaterial({
+    color: 0xff2525,
+    emissive: 0xff1414,
+    emissiveIntensity: 2.5
+  });
+
+  // 体
+  const body = new THREE.Mesh(new THREE.SphereGeometry(1.35, 42, 32), bodyMaterial);
+  body.scale.set(1.25, 1.35, 0.9);
+  body.position.y = 0.25;
+  group.add(body);
+
+  // お腹
+  const belly = new THREE.Mesh(
+    new THREE.SphereGeometry(0.72, 32, 20),
+    new THREE.MeshStandardMaterial({
+      color: 0x6fffd0,
+      emissive: 0x063d2c,
+      emissiveIntensity: 0.6,
+      roughness: 0.35
+    })
+  );
+  belly.scale.set(1.0, 0.82, 0.28);
+  belly.position.set(0, -0.05, 1.02);
+  group.add(belly);
+
+  // 目
+  const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 12), eyeMaterial);
+  leftEye.position.set(-0.45, 0.72, 1.05);
+  group.add(leftEye);
+
+  const rightEye = leftEye.clone();
+  rightEye.position.x = 0.45;
+  group.add(rightEye);
+
+  // 角
+  const hornGeometry = new THREE.ConeGeometry(0.22, 0.85, 18);
+  const leftHorn = new THREE.Mesh(hornGeometry, hornMaterial);
+  leftHorn.position.set(-0.55, 1.62, 0.05);
+  leftHorn.rotation.z = 0.35;
+  group.add(leftHorn);
+
+  const rightHorn = leftHorn.clone();
+  rightHorn.position.x = 0.55;
+  rightHorn.rotation.z = -0.35;
+  group.add(rightHorn);
+
+  // 腕
+  const armGeometry = new THREE.CapsuleGeometry(0.18, 1.0, 8, 16);
+  const leftArm = new THREE.Mesh(armGeometry, bodyMaterial);
+  leftArm.position.set(-1.65, 0.08, 0.05);
+  leftArm.rotation.z = 0.75;
+  group.add(leftArm);
+
+  const rightArm = leftArm.clone();
+  rightArm.position.x = 1.65;
+  rightArm.rotation.z = -0.75;
+  group.add(rightArm);
+
+  // 足
+  const footGeometry = new THREE.SphereGeometry(0.35, 24, 14);
+  const leftFoot = new THREE.Mesh(footGeometry, bodyMaterial);
+  leftFoot.scale.set(1.25, 0.55, 0.9);
+  leftFoot.position.set(-0.55, -1.25, 0.32);
+  group.add(leftFoot);
+
+  const rightFoot = leftFoot.clone();
+  rightFoot.position.x = 0.55;
+  group.add(rightFoot);
+
+  // 白いワイヤーを足すと、赤緑表示でも輪郭がわかりやすくなります。
+  group.traverse((child) => {
+    if (!child.isMesh) return;
+
+    const wire = new THREE.LineSegments(
+      new THREE.WireframeGeometry(child.geometry),
+      new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.22
+      })
+    );
+    child.add(wire);
+  });
+
+  return group;
+}
+
+// GLBモデルを読み込めたら使い、読み込めなければ自作モンスターを出します。
+function loadMonster() {
+  const loader = new GLTFLoader();
+
+  // models フォルダの場所が環境によって違っても動きやすいように、
+  // 複数の候補パスを順番に試します。
+  function tryLoadModel(pathIndex) {
+    const modelPath = MONSTER_MODEL_PATHS[pathIndex];
+
+    // 候補を全部試しても読み込めなかったら、コードで作ったモンスターを表示します。
+    if (!modelPath) {
+      monster = createFallbackMonster();
+      monster.position.set(0, 0, 0);
+      monsterInitialScale.copy(monster.scale);
+      scene.add(monster);
+      return;
+    }
+
+    loader.load(
+      modelPath,
+      (gltf) => {
+        const loadedModel = gltf.scene;
+        loadedModel.scale.set(2.8, 2.8, 2.8);
+
+        // 赤緑表示で見やすいように、青く発光する素材へ置き換えます。
+        loadedModel.traverse((child) => {
+          if (!child.isMesh) return;
+          child.material = new THREE.MeshStandardMaterial({
+            color: 0x2b6cff,
+            transparent: true,
+            opacity: 0.9,
+            metalness: 0.2,
+            roughness: 0.08,
+            emissive: 0x0a1a3a,
+            emissiveIntensity: 0.7,
+            side: THREE.DoubleSide
+          });
+        });
+
+        // モデルの中心を親グループの原点に合わせます。
+        // GLBの原点が足元や端にあっても、親グループを中央固定で扱えます。
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = box.getCenter(new THREE.Vector3());
+        loadedModel.position.sub(center);
+
+        monster = new THREE.Group();
+        monster.add(loadedModel);
+        monster.position.set(0, 0, 0);
+        monsterInitialScale.copy(monster.scale);
+        scene.add(monster);
+
+        const finalBox = new THREE.Box3().setFromObject(monster);
+        monsterRadius = finalBox.getSize(new THREE.Vector3()).length() * 0.22;
+      },
+      undefined,
+      () => {
+        tryLoadModel(pathIndex + 1);
+      }
+    );
+  }
+
+  tryLoadModel(0);
+}
+
+loadMonster();
+
+// ============================================================
+// 元気玉
+// ============================================================
+
+const spiritBall = new THREE.Group();
+scene.add(spiritBall);
+
+// 中心の明るい球です。
+const ballCore = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 48, 32),
+  new THREE.MeshStandardMaterial({
+    color: 0xf4ff66,
+    emissive: 0xb4ff20,
+    emissiveIntensity: 1.7,
+    transparent: true,
+    opacity: 0.82,
+    roughness: 0.08
+  })
+);
+spiritBall.add(ballCore);
+
+// 外側のぼんやりした光です。
+const ballGlow = new THREE.Mesh(
+  new THREE.SphereGeometry(1.18, 48, 32),
+  new THREE.MeshBasicMaterial({
+    color: 0x3cff73,
+    transparent: true,
+    opacity: 0.2,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  })
+);
+spiritBall.add(ballGlow);
+
+// 元気玉自体もライトとして光らせます。
+const ballLight = new THREE.PointLight(0xaaff55, 0, 12);
+spiritBall.add(ballLight);
+
+// 元気玉はモンスターの手前、少し下に置きます。
+spiritBall.position.set(0, -1.65, 4.0);
+spiritBall.scale.setScalar(0.001);
+
+// ============================================================
+// ゲーム状態
+// ============================================================
+
+let started = false;
+let finished = false;
+let launchStarted = false;
+let startTime = 0;
+let chargeCount = 0;
+let power = 0;
+let launchProgress = 0;
 let mouseX = window.innerWidth / 2;
 let mouseY = window.innerHeight / 2;
 
-window.addEventListener("mousemove", (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-  scopeEl.style.transform = `translate(-50%, -50%) translate(${mouseX}px, ${mouseY}px)`;
-});
+// ============================================================
+// 座標変換と当たり判定
+// ============================================================
 
-// 宝石の現在のワールド座標上での半径（毎フレームanimate()内で更新する）
-let currentenemyWorldRadius = 0;
-
-// 3Dのワールド座標を画面上のピクセル座標に変換するヘルパー
+// 3D空間の座標を、画面上のピクセル座標に変換します。
 function worldToScreen(vector3, cam) {
-  const v = vector3.clone().project(cam); // NDC(-1〜1)に変換
+  const v = vector3.clone().project(cam);
   return {
     x: (v.x * 0.5 + 0.5) * window.innerWidth,
     y: (-v.y * 0.5 + 0.5) * window.innerHeight
   };
 }
 
-// クリックした瞬間、スコープ(=クリック位置)と宝石が画面上で重なっているか判定
-renderer.domElement.addEventListener("click", () => {
-  if (!enemy) return;
-const enemyScreen = worldToScreen(enemy.position, camera);
+// スコープの中心がモンスターに重なっているか調べます。
+function isScopeOnMonster() {
+  if (!monster) return false;
 
-// 宝石の見た目上の半径を求めるため、中心から半径分ずらした点も画面座標に変換する
-const edgeWorld = enemy.position.clone().add(
-  new THREE.Vector3(currentenemyWorldRadius, 0, 0)
-);
-  
-const edgeScreen = worldToScreen(edgeWorld, camera);
+  const monsterCenter = new THREE.Vector3();
+  monster.getWorldPosition(monsterCenter);
+  monsterCenter.y += 0.35;
 
-const hitRadiusPx = Math.hypot(
-  edgeScreen.x - enemyScreen.x,
-  edgeScreen.y - enemyScreen.y
-);
+  const centerScreen = worldToScreen(monsterCenter, camera);
+  const edgeScreen = worldToScreen(
+    monsterCenter.clone().add(new THREE.Vector3(monsterRadius, 0, 0)),
+    camera
+  );
 
-const dx = mouseX - enemyScreen.x;
-const dy = mouseY - enemyScreen.y;
-const distPx = Math.hypot(dx, dy);
+  const hitRadiusPx = Math.max(42, Math.hypot(edgeScreen.x - centerScreen.x, edgeScreen.y - centerScreen.y));
+  const distPx = Math.hypot(mouseX - centerScreen.x, mouseY - centerScreen.y);
 
-if (distPx <= hitRadiusPx) {
-  enemyHP--;
-
-  console.log("残りHP：" + enemyHP);
-
-  scopeEl.style.filter = "drop-shadow(0 0 12px red) brightness(1.5)";
-  setTimeout(() => {
-    scopeEl.style.filter = "";
-  }, 150);
-
-  if (enemyHP <= 0) {
-    console.log("敵を倒した！");
-  }
+  return distPx <= hitRadiusPx;
 }
+
+// ============================================================
+// 入力
+// ============================================================
+
+function moveScope(clientX, clientY) {
+  mouseX = clientX;
+  mouseY = clientY;
+  scopeEl.style.left = `${mouseX}px`;
+  scopeEl.style.top = `${mouseY}px`;
+}
+
+window.addEventListener("mousemove", (event) => {
+  moveScope(event.clientX, event.clientY);
 });
 
+window.addEventListener("touchmove", (event) => {
+  const touch = event.touches[0];
+  if (!touch) return;
+  moveScope(touch.clientX, touch.clientY);
+}, { passive: true });
 
-// ---- 飛び出しの距離設定 ----
-// START_Z: スタート地点（奥）
-// END_Z  : カメラのすぐ手前まで迫る地点（ここまで来て初めてリセット）
-// CAMERA_Z: カメラのz座標（近づき具合の計算に使用）
-const START_Z = -18;
-// END_Z, MAX_SCALE_FACTORはモデル読み込み後、実サイズを見て自動的に
-// 安全な範囲に補正するので let にしておく
-let END_Z = 6;
-const CAMERA_Z = camera.position.z;
-const BASE_SCALE = 3.5;
-const MIN_SCALE_FACTOR = 0.7;
-let MAX_SCALE_FACTOR = 2.8;
-// カメラと宝石の表面との間に、最低限これだけの距離を残す(安全マージン)
-const CAMERA_SAFETY_MARGIN = 3;
-// 宝石の「スケール1のときの半径」。モデル読み込み後にloader.load内で設定される
-let unitRadius = 1;
+// ボタンを押すたびに元気玉が大きくなります。
+function chargeSpiritBall() {
+  if (finished || launchStarted) return;
 
-// ---- フェードイン/フェードアウト設定 ----
-// 進行度(progress)の最初と最後、それぞれこの割合の区間で不透明度を0まで下げる
-const FADE_RANGE = 0.12;
-const BASE_enemy_OPACITY = 0.85;
-const BASE_WIRE_OPACITY = 0.25;
-
-loader.load("./models/monster_diorama.glb", (gltf) => {
-  enemy = gltf.scene;
-  enemy.scale.set(2.8, 2.8, 2.8);
-  // 中心補正
-  const box = new THREE.Box3().setFromObject(enemy);
-  const center = box.getCenter(new THREE.Vector3());
-  enemy.position.sub(center);
-  enemy.position.set(0, 0, START_Z);
-
-  // ---- ここが今回の肝：モデルの実サイズから安全なスケール上限を自動計算 ----
-  // box は scale=2.8 の状態で計測したものなので、2.8で割って
-  // 「スケール1のときの半径」を出す
-  const size = box.getSize(new THREE.Vector3());
-  unitRadius = Math.max(size.x, size.y, size.z) / 2 / 2.8;
-
-  // 最接近時(END_Z)にカメラと宝石表面の間に安全マージンを残せる、
-  // 最大の「スケール倍率(BASE_SCALE * MAX_SCALE_FACTOR)」を逆算する
-  const closestDistance = CAMERA_Z - END_Z;
-  const maxAllowedMultiplier = (closestDistance - CAMERA_SAFETY_MARGIN) / unitRadius;
-  const requestedMultiplier = BASE_SCALE * MAX_SCALE_FACTOR;
-
-  if (requestedMultiplier > maxAllowedMultiplier) {
-    // 今設定している大きさだとカメラに宝石が被ってしまうので、
-    // MAX_SCALE_FACTORを安全な値まで自動的に引き下げる
-    MAX_SCALE_FACTOR = Math.max(MIN_SCALE_FACTOR, maxAllowedMultiplier / BASE_SCALE);
-    console.warn(
-      `[安全補正] MAX_SCALE_FACTORが大きすぎてカメラが宝石に埋もれるため、` +
-      `自動的に ${MAX_SCALE_FACTOR.toFixed(2)} まで引き下げました。` +
-      `（宝石のunitRadius=${unitRadius.toFixed(2)}）`
-    );
+  // 最初に押した瞬間から60秒タイマーを開始します。
+  if (!started) {
+    started = true;
+    startTime = performance.now();
   }
 
-  enemy.traverse((child) => {
-    if (child.isMesh) {
-      // ======================
-      // サファイア材質
-      // ======================
-      child.material = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x2b6cff),
-        transparent: true,
-        opacity: 0.85,
-        metalness: 0.2,
-        roughness: 0.05,
-        emissive: new THREE.Color(0x0a1a3a),
-        emissiveIntensity: 0.6,
-        side: THREE.DoubleSide // カメラが宝石の内側に入り込んでも面が消えないようにする
-      });
-      enemyMaterials.push(child.material);
-      // ======================
-      // カット線（ワイヤー）
-      // ======================
-      const wire = new THREE.LineSegments(
-        new THREE.WireframeGeometry(child.geometry),
-        new THREE.LineBasicMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.25
-        })
-      );
-      wireMaterials.push(wire.material);
-      child.add(wire);
-    }
-  });
-  scene.add(enemy);
+  chargeCount += 1;
+
+  // 連打数をそのまま大きさにすると暴れすぎるので、
+  // 上限に近づくほどゆるやかに増える計算にしています。
+  power = Math.min(100, Math.floor(100 * (1 - Math.exp(-chargeCount / 70))));
+
+  // 押した瞬間に光を強くして、連打している感触を出します。
+  ballCore.material.emissiveIntensity = 1.9 + power * 0.04;
+  ballGlow.material.opacity = 0.18 + power * 0.006;
+  ballLight.intensity = power * 0.08;
+
+  updateHud();
+}
+
+chargeButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  chargeSpiritBall();
 });
 
-// ======================
-// animation（飛び出し）
-// ======================
+// ============================================================
+// タイマー・発射・結果
+// ============================================================
+
+function getRemainingSeconds() {
+  if (!started) return GAME_SECONDS;
+  const elapsed = (performance.now() - startTime) / 1000;
+  return Math.max(0, GAME_SECONDS - elapsed);
+}
+
+function startLaunch() {
+  if (launchStarted || finished) return;
+
+  launchStarted = true;
+  chargeButton.disabled = true;
+  chargeButton.textContent = "発射！";
+  launchProgress = 0;
+}
+
+function finishBattle(didHit) {
+  if (finished) return;
+
+  finished = true;
+
+  if (didHit) {
+    // 命中したらHPを削ります。
+    // しっかり連打していれば、ほぼ一撃で倒せます。
+    const damage = Math.max(60, power + Math.floor(chargeCount / 3));
+    monsterHP = Math.max(0, monsterHP - damage);
+  }
+
+  if (didHit && monsterHP <= 0) {
+    monsterDefeated = true;
+    resultTitleEl.textContent = "GAME CLEAR";
+    resultMessageEl.textContent = `命中！POWER ${power} の元気玉でモンスターを倒した！`;
+  } else if (didHit) {
+    resultTitleEl.textContent = "HIT";
+    resultMessageEl.textContent = `当たったけど倒しきれない！残りHP ${monsterHP}`;
+  } else {
+    resultTitleEl.textContent = "MISS";
+    resultMessageEl.textContent = "スコープが外れていた！もう一回ねらおう。";
+  }
+
+  chargeButton.disabled = true;
+  resultEl.classList.add("visible");
+  updateHud();
+}
+
+function resetGame() {
+  started = false;
+  finished = false;
+  launchStarted = false;
+  monsterDefeated = false;
+  startTime = 0;
+  chargeCount = 0;
+  power = 0;
+  launchProgress = 0;
+  monsterHP = MONSTER_MAX_HP;
+
+  spiritBall.position.set(0, -1.65, 4.0);
+  spiritBall.scale.setScalar(0.001);
+  spiritBall.visible = true;
+
+  if (monster) {
+    monster.position.set(0, 0, 0);
+    monster.rotation.set(0, 0, 0);
+    monster.scale.copy(monsterInitialScale);
+  }
+
+  chargeButton.disabled = false;
+  chargeButton.textContent = "連打して元気玉をためる";
+  resultEl.classList.remove("visible");
+  updateHud();
+}
+
+restartButton.addEventListener("click", resetGame);
+
+function updateHud() {
+  timerEl.textContent = getRemainingSeconds().toFixed(1);
+  powerEl.textContent = String(power);
+  hpEl.textContent = String(monsterHP);
+}
+
+// ============================================================
+// アニメーション
+// ============================================================
+
 function animate() {
   requestAnimationFrame(animate);
 
-  if (enemy) {
-    const t = Date.now() * 0.001;
+  const now = performance.now();
+  const t = now * 0.001;
 
-    // 左右・上下にふわっと揺れる
-    enemy.position.x = Math.sin(t * 0.9) * 1.4;
-    enemy.position.y = Math.sin(t * 1.3) * 0.5
-    
-  // ---- 左目・右目それぞれの映像を描画 ----
-  // cameraは直接render()に渡していないため、matrixWorldが自動更新されない。
-  // stereo.update()はこのmatrixWorldを元に左右のカメラ位置を計算するので、
-  // ここで明示的に更新しておく（これを忘れると視差が正しく計算されない）。
+  // モンスターは中央固定。
+  // 位置を左右へ動かさず、呼吸と回転だけで生きている感じを出します。
+  if (monster) {
+    if (monsterDefeated) {
+      monster.rotation.z = THREE.MathUtils.lerp(monster.rotation.z, -Math.PI / 2, 0.05);
+      monster.position.y = THREE.MathUtils.lerp(monster.position.y, -1.1, 0.05);
+    } else {
+      monster.position.x = 0;
+      monster.position.y = Math.sin(t * 2) * 0.04;
+      monster.rotation.y = Math.sin(t * 0.7) * 0.22;
+    }
+  }
+
+  // 星を少しだけ回して、奥行きがあるように見せます。
+  stars.rotation.y += 0.0006;
+
+  // スコープがモンスターに乗っている時だけ光らせます。
+  scopeEl.classList.toggle("hit-ready", isScopeOnMonster() && !finished);
+
+  // 連打量に応じて元気玉をふくらませます。
+  if (!launchStarted) {
+    const targetScale = THREE.MathUtils.lerp(0.18, 2.25, power / 100);
+    const pulse = 1 + Math.sin(t * 8) * 0.035;
+    spiritBall.scale.setScalar(THREE.MathUtils.lerp(spiritBall.scale.x, targetScale * pulse, 0.18));
+    spiritBall.rotation.y += 0.015 + power * 0.0008;
+    spiritBall.rotation.x += 0.009;
+  }
+
+  // 60秒たったら自動で元気玉が飛んでいきます。
+  if (started && !launchStarted && getRemainingSeconds() <= 0) {
+    startLaunch();
+  }
+
+  // 発射中は、元気玉をモンスター方向へ飛ばします。
+  if (launchStarted && !finished) {
+    launchProgress = Math.min(1, launchProgress + 0.018);
+
+    const start = new THREE.Vector3(0, -1.65, 4.0);
+    const end = new THREE.Vector3(0, 0.45, 0.2);
+    spiritBall.position.lerpVectors(start, end, launchProgress);
+    spiritBall.scale.setScalar(THREE.MathUtils.lerp(2.0 + power / 55, 0.75, launchProgress));
+
+    if (launchProgress >= 1) {
+      finishBattle(isScopeOnMonster());
+    }
+  }
+
+  updateHud();
+  renderAnaglyph();
+}
+
+// 左右の視点で描いたあと、赤緑画面として合成します。
+function renderAnaglyph() {
   camera.updateMatrixWorld();
   stereo.update(camera);
 
@@ -285,7 +634,6 @@ function animate() {
   renderer.setRenderTarget(rtRight);
   renderer.render(scene, stereo.cameraR);
 
-  // どちらの目の映像を赤チャンネル/緑チャンネルに使うかをRED_EYEに応じて割り当てる
   if (RED_EYE === "left") {
     composeMaterial.uniforms.tRedEye.value = rtLeft.texture;
     composeMaterial.uniforms.tGreenEye.value = rtRight.texture;
@@ -294,20 +642,23 @@ function animate() {
     composeMaterial.uniforms.tGreenEye.value = rtLeft.texture;
   }
 
-  // 画面に合成結果を描画
   renderer.setRenderTarget(null);
   renderer.render(composeScene, composeCamera);
 }
+
 animate();
 
-// ======================
-// resize
-// ======================
+// ============================================================
+// リサイズ対応
+// ============================================================
+
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+
   renderer.setSize(window.innerWidth, window.innerHeight);
   rtLeft.setSize(window.innerWidth, window.innerHeight);
   rtRight.setSize(window.innerWidth, window.innerHeight);
+
   stereo.aspect = camera.aspect;
 });
