@@ -393,8 +393,8 @@ let startTime = 0;
 let chargeCount = 0;
 let power = 0;
 let launchProgress = 0;
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
+let scopeX = window.innerWidth / 2;
+let scopeY = window.innerHeight / 2;
 
 // ============================================================
 // 座標変換と当たり判定
@@ -424,7 +424,7 @@ function isScopeOnMonster() {
   );
 
   const hitRadiusPx = Math.max(42, Math.hypot(edgeScreen.x - centerScreen.x, edgeScreen.y - centerScreen.y));
-  const distPx = Math.hypot(mouseX - centerScreen.x, mouseY - centerScreen.y);
+  const distPx = Math.hypot(scopeX - centerScreen.x, scopeY - centerScreen.y);
 
   return distPx <= hitRadiusPx;
 }
@@ -433,22 +433,16 @@ function isScopeOnMonster() {
 // 入力
 // ============================================================
 
-function moveScope(clientX, clientY) {
-  mouseX = clientX;
-  mouseY = clientY;
-  scopeEl.style.left = `${mouseX}px`;
-  scopeEl.style.top = `${mouseY}px`;
+// スコープは画面中央に固定します。
+// マウスや指の位置ではなく、常に画面の真ん中で狙います。
+function updateFixedScopePosition() {
+  scopeX = window.innerWidth / 2;
+  scopeY = window.innerHeight / 2;
+  scopeEl.style.left = `${scopeX}px`;
+  scopeEl.style.top = `${scopeY}px`;
 }
 
-window.addEventListener("mousemove", (event) => {
-  moveScope(event.clientX, event.clientY);
-});
-
-window.addEventListener("touchmove", (event) => {
-  const touch = event.touches[0];
-  if (!touch) return;
-  moveScope(touch.clientX, touch.clientY);
-}, { passive: true });
+updateFixedScopePosition();
 
 // ボタンを押すたびに元気玉が大きくなります。
 function chargeSpiritBall() {
@@ -661,4 +655,5 @@ window.addEventListener("resize", () => {
   rtRight.setSize(window.innerWidth, window.innerHeight);
 
   stereo.aspect = camera.aspect;
+  updateFixedScopePosition();
 });
