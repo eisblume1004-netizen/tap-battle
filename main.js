@@ -139,8 +139,9 @@ renderer.domElement.addEventListener("click", () => {
   const enemyScreen = worldToScreen(enemy.position, camera);
 
   // 宝石の見た目上の半径を求めるため、中心から半径分ずらした点も画面座標に変換する
-  const edgeWorld = enemy.position.clone().add(new THREE.Vector3(currentenemy
-  WorldRadius, 0, 0));
+  const edgeWorld = enemy.position.clone().add(
+    new THREE.Vector3(currentenemyWorldRadius, 0, 0)
+);
   const edgeScreen = worldToScreen(edgeWorld, camera);
   const hitRadiusPx = Math.hypot(edgeScreen.x - enemyScreen.x, edgeScreen.y - enemyScreen.y);
 
