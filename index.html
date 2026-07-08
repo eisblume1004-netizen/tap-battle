@@ -3,43 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <title>ジャングル元気玉ゲーム</title>
-    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body{
+            margin:0;
+            overflow:hidden;
+        }
+
+        #info{
+            position:absolute;
+            top:20px;
+            left:20px;
+            color:white;
+            font-size:32px;
+            font-weight:bold;
+            z-index:10;
+            text-shadow:2px 2px 5px black;
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three":"https://unpkg.com/three@0.179.1/build/three.module.js"
+        }
+    }
+    </script>
+
 </head>
+
 <body>
 
-    <!-- UI -->
-    <div id="ui">
+<div id="info">
+    残り時間：20<br>
+    連打数：0
+</div>
 
-        <div id="timer">
-            残り時間：<span id="time">20</span>
-        </div>
-
-        <div id="score">
-            連打数：<span id="count">0</span>
-        </div>
-
-    </div>
-
-    <!-- ゲームエリア -->
-    <div id="game">
-
-        <!-- 主人公 -->
-        <div id="player">🧑</div>
-
-        <!-- 元気玉 -->
-        <div id="spiritBall"></div>
-
-        <!-- ラスボス -->
-        <div id="boss">🦍</div>
-
-    </div>
-
-    <!-- ボタン -->
-    <button id="tapButton">
-        連打！！
-    </button>
-
-    <script src="main.js"></script>
+<script type="module" src="main.js"></script>
 
 </body>
 </html>
