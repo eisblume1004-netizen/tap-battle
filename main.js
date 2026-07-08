@@ -54,7 +54,7 @@ scene.add(light);
 // 元気玉
 // ----------------------
 
-const ballGeometry = new THREE.SphereGeometry(0.8,64,64);
+const ballGeometry = new THREE.SphereGeometry(0.4,64,64);
 
 const ballMaterial = new THREE.MeshStandardMaterial({
 
@@ -66,9 +66,10 @@ const ballMaterial = new THREE.MeshStandardMaterial({
 
 });
 
-const spiritBall = new THREE.Mesh(ballGeometry,ballMaterial);
+const spiritBall = new THREE.Mesh(ballGeometry, ballMaterial);
 
-spiritBall.position.set(0,1.5,2);
+// x, y, z
+spiritBall.position.set(0, 0.3, 2);
 
 scene.add(spiritBall);
 
@@ -86,7 +87,7 @@ const bossMaterial = new THREE.MeshStandardMaterial({
 
 const boss = new THREE.Mesh(bossGeometry,bossMaterial);
 
-boss.position.set(0,1.5,-8);
+boss.position.set(0,1.8,-8);
 
 scene.add(boss);
 
