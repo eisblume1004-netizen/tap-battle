@@ -51,7 +51,6 @@ const light = new THREE.DirectionalLight(0xffffff, 2);
 light.position.set(5, 8, 5);
 
 scene.add(light);
-
 // =====================================================
 // Game（ゲーム変数）
 // =====================================================
@@ -62,23 +61,37 @@ let clickCount = 0;
 // 残り時間
 let timeLeft = 20;
 
-// ゲーム開始した？
+// ゲーム開始
 let gameStarted = false;
 
-// ゲーム終了した？
+// ゲーム終了
 let gameFinished = false;
 
 // 元気玉の大きさ
 let ballScale = 1;
 
-// 元気玉を飛ばす？
+// ---------- アニメーション ----------
+
+// 元気玉を飛ばす
 let isLaunching = false;
 
-// ラスボスを吹っ飛ばす？
+// 命中演出
+let isImpact = false;
+
+// ラスボスが吹っ飛ぶ
 let bossFlying = false;
 
-// ラスボスが飛ぶ距離
+// GAME CLEAR表示
+let gameClear = false;
+
+// ラスボスの飛ぶ距離
 let bossTargetX = 0;
+
+// 命中した時間
+let impactStartTime = 0;
+
+// 画面揺れ時間
+const impactDuration = 300;
 // =====================================================
 // UI取得
 // =====================================================
@@ -125,7 +138,6 @@ spiritBall.position.set(
 );
 
 scene.add(spiritBall);
-
 // =====================================================
 // ラスボス（仮）
 // =====================================================
@@ -296,27 +308,57 @@ function animate() {
     // 敵に到達した？
     if (spiritBall.position.z <= boss.position.z + 1) {
 
-        isLaunching = false;
+    isLaunching = false;
+
+    // 命中演出開始
+    isImpact = true;
+
+    // 今の時間を保存
+    impactStartTime = performance.now();
+
+}  
+        
+}
+// =====================================================
+// 命中演出
+// =====================================================
+
+if (isImpact) {
+
+    // 画面を揺らす
+    camera.position.x = Math.random() * 0.1 - 0.05;
+    camera.position.y = 1.8 + Math.random() * 0.1 - 0.05;
+
+    // 0.3秒経過した？
+    if (performance.now() - impactStartTime > impactDuration) {
+
+        // カメラを元に戻す
+        camera.position.set(0, 1.8, 8);
+        camera.lookAt(0, 0, -4);
+
+        isImpact = false;
 
         bossFlying = true;
 
-        // 連打数で飛距離を決める
+        // 連打数で飛距離決定
         bossTargetX = clickCount * 0.08;
 
     }
 
 }
+
+    
     // ラスボスを吹っ飛ばす
     if (bossFlying) {
 
     if (boss.position.x < bossTargetX) {
 
-        boss.position.x += 0.1;
+     boss.position.x += 0.12;
+     boss.position.y += 0.05;
 
-        boss.position.y += 0.03;
-
-        boss.rotation.z -= 0.08;
-
+     boss.rotation.x += 0.15;
+     boss.rotation.y += 0.15;
+     boss.rotation.z += 0.15;
     }
 
 }
