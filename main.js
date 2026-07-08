@@ -1,15 +1,17 @@
 import * as THREE from "three";
 
-// ======================
-// Scene
-// ======================
+// =====================================================
+// Scene（ゲーム空間）
+// =====================================================
 
 const scene = new THREE.Scene();
+
+// 仮背景（後でジャングル画像に変更）
 scene.background = new THREE.Color(0x87ceeb);
 
-// ======================
-// Camera
-// ======================
+// =====================================================
+// Camera（カメラ）
+// =====================================================
 
 const camera = new THREE.PerspectiveCamera(
     60,
@@ -18,103 +20,276 @@ const camera = new THREE.PerspectiveCamera(
     100
 );
 
+// カメラ位置
 camera.position.set(0, 1.8, 8);
+
+// カメラが見る方向
 camera.lookAt(0, 0, -4);
 
-// ======================
-// Renderer
-// ======================
+// =====================================================
+// Renderer（描画）
+// =====================================================
 
 const renderer = new THREE.WebGLRenderer({
     antialias: true
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
+
 document.body.appendChild(renderer.domElement);
 
-// ======================
-// Light
-// ======================
+// =====================================================
+// Light（ライト）
+// =====================================================
 
+// 全体を明るくするライト
 scene.add(new THREE.AmbientLight(0xffffff, 2));
 
+// 太陽みたいなライト
 const light = new THREE.DirectionalLight(0xffffff, 2);
+
 light.position.set(5, 8, 5);
+
 scene.add(light);
 
-// ======================
+// =====================================================
+// Game（ゲーム変数）
+// =====================================================
+
+// 連打数
+let clickCount = 0;
+
+// 残り時間
+let timeLeft = 20;
+
+// ゲーム開始した？
+let gameStarted = false;
+
+// ゲーム終了した？
+let gameFinished = false;
+
+// 元気玉の大きさ
+let ballScale = 1;
+
+// =====================================================
+// UI取得
+// =====================================================
+
+// index.htmlのtime
+const timeText = document.getElementById("time");
+
+// index.htmlのcount
+const countText = document.getElementById("count");
+
+// =====================================================
 // 元気玉
-// ======================
+// =====================================================
 
-const ballGeometry = new THREE.SphereGeometry(0.15, 64, 64);
+// 球体
+const ballGeometry = new THREE.SphereGeometry(
+    0.15,
+    64,
+    64
+);
 
+// 材質
 const ballMaterial = new THREE.MeshStandardMaterial({
+
     color: 0x44ff44,
+
     emissive: 0x44ff44,
+
     emissiveIntensity: 2
+
 });
 
-const spiritBall = new THREE.Mesh(ballGeometry, ballMaterial);
-spiritBall.position.set(0, -1.0, 2);
+// 元気玉生成
+const spiritBall = new THREE.Mesh(
+    ballGeometry,
+    ballMaterial
+);
+
+// 位置
+spiritBall.position.set(
+    0,
+    -1.0,
+    2
+);
 
 scene.add(spiritBall);
 
-// ======================
+// =====================================================
 // ラスボス（仮）
-// ======================
+// =====================================================
 
-const bossGeometry = new THREE.BoxGeometry(2, 3, 2);
+const bossGeometry = new THREE.BoxGeometry(
+    2,
+    3,
+    2
+);
 
 const bossMaterial = new THREE.MeshStandardMaterial({
+
     color: 0xaa2222
+
 });
 
-const boss = new THREE.Mesh(bossGeometry, bossMaterial);
-boss.position.set(0, 0, -4);
+const boss = new THREE.Mesh(
+    bossGeometry,
+    bossMaterial
+);
+
+// 奥に配置
+boss.position.set(
+    0,
+    0,
+    -4
+);
 
 scene.add(boss);
-
-// ======================
-// Enterキー
-// ======================
-
-let scale = 1;
+// =====================================================
+// Enterキー（連打処理）
+// =====================================================
 
 window.addEventListener("keydown", (event) => {
 
-    if (event.code === "Enter") {
+    // Enterキー以外は何もしない
+    if (event.code !== "Enter") return;
 
-        scale += 0.03;
-        spiritBall.scale.set(scale, scale, scale);
+    // ゲーム終了後は連打できない
+    if (gameFinished) return;
 
+    // 最初のEnterでゲーム開始
+    if (!gameStarted) {
+        startGame();
     }
+
+    // -----------------------------
+    // 連打数を増やす
+    // -----------------------------
+
+    clickCount++;
+
+    // 画面表示を更新
+    countText.textContent = clickCount;
+
+    // -----------------------------
+    // 元気玉を少し大きくする
+    // -----------------------------
+
+    ballScale += 0.03;
+
+    spiritBall.scale.set(
+        ballScale,
+        ballScale,
+        ballScale
+    );
 
 });
 
-// ======================
-// Resize
-// ======================
+// =====================================================
+// タイマー開始
+// =====================================================
+
+function startGame() {
+
+    // 二重スタート防止
+    gameStarted = true;
+
+    // 残り時間を表示
+    timeText.textContent = timeLeft;
+
+    // 1秒ごとに実行
+    const timer = setInterval(() => {
+
+        timeLeft--;
+
+        // 画面更新
+        timeText.textContent = timeLeft;
+
+        // 時間切れ
+        if (timeLeft <= 0) {
+
+            clearInterval(timer);
+
+            gameFinished = true;
+
+            finishGame();
+
+        }
+
+    }, 1000);
+
+}
+
+// =====================================================
+// ゲーム終了
+// =====================================================
+
+function finishGame() {
+
+    console.log("==========");
+    console.log("TIME UP!");
+    console.log("連打数：" + clickCount);
+    console.log("==========");
+
+    // 次にここへ
+    // ・元気玉発射
+    // ・敵に命中
+    // ・敵を吹っ飛ばす
+    // ・GAME CLEAR
+    // を追加していきます。
+
+}
+// =====================================================
+// 画面サイズ変更
+// =====================================================
 
 window.addEventListener("resize", () => {
 
     camera.aspect = window.innerWidth / window.innerHeight;
+
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    );
 
 });
-
-// ======================
-// Animate
-// ======================
+// =====================================================
+// アニメーション
+// =====================================================
 
 function animate() {
 
+    // 次のフレームを描画
     requestAnimationFrame(animate);
 
+    // -----------------------------
+    // 元気玉
+    // -----------------------------
+
+    // ゆっくり回転
     spiritBall.rotation.y += 0.01;
+
+    // -----------------------------
+    // 今後追加する処理
+    // -----------------------------
+
+    // 元気玉を飛ばす
+
+    // ラスボスを吹っ飛ばす
+
+    // パーティクル
+
+    // -----------------------------
+    // 描画
+    // -----------------------------
 
     renderer.render(scene, camera);
 
 }
 
+// ゲーム開始
 animate();
