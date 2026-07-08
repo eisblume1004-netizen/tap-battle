@@ -1,256 +1,100 @@
-/*
-  画面全体をゲーム画面として使うため、余白をなくします。
-  three.js の canvas は main.js 側で body に追加します。
-*/
-html,
-body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background: #06140b;
-  color: #ffffff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  user-select: none;
+body{
+    margin:0;
+    overflow:hidden;
+    font-family:sans-serif;
+
+    background-image:url("images/background.png");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+
+    width:100vw;
+    height:100vh;
 }
 
-/*
-  canvas は画面いっぱいに固定。
-  HUDやスコープを上に重ねるので、z-index は低めにします。
-*/
-canvas {
-  position: fixed;
-  inset: 0;
-  display: block;
-  z-index: 0;
+/* 上のUI */
+
+#ui{
+    position:absolute;
+    top:20px;
+    left:20px;
+
+    color:white;
+    font-size:32px;
+    font-weight:bold;
+    text-shadow:2px 2px 6px black;
 }
 
-/*
-  HUD全体。
-  親はクリックを拾わず、ボタンだけクリックできるようにします。
-*/
-.hud {
-  position: fixed;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
+/* ゲームエリア */
+
+#game{
+    position:relative;
+    width:100vw;
+    height:100vh;
 }
 
-/* タイマー、パワー、HPを画面上に表示します。 */
-.topbar {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  right: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-weight: 800;
-  text-shadow: 0 2px 14px #000000;
+/* 主人公 */
+
+#player{
+    position:absolute;
+
+    left:18%;
+    bottom:180px;
+
+    font-size:80px;
 }
 
-.status-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+/* 元気玉 */
+
+#spiritBall{
+
+    position:absolute;
+
+    left:36%;
+    bottom:250px;
+
+    width:80px;
+    height:80px;
+
+    border-radius:50%;
+
+    background:radial-gradient(circle,#b8ff7a,#38d400);
+
+    box-shadow:
+    0 0 20px #6aff00,
+    0 0 60px #6aff00;
 }
 
-.status {
-  min-width: 104px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.42);
-  box-shadow: 0 0 18px rgba(0, 255, 120, 0.08);
-  backdrop-filter: blur(8px);
+/* ラスボス */
+
+#boss{
+    position:absolute;
+
+    right:15%;
+    bottom:180px;
+
+    font-size:130px;
 }
 
-.label {
-  display: block;
-  color: #aef7c1;
-  font-size: 11px;
-  line-height: 1.1;
-  letter-spacing: 0;
-}
+/* ボタン */
 
-.value {
-  display: block;
-  margin-top: 2px;
-  font-size: 24px;
-  line-height: 1;
-}
+#tapButton{
 
-/*
-  連打ボタン。
-  押した瞬間に少し沈むようにして、連打感を出します。
-*/
-.charge-button {
-  position: absolute;
-  left: 50%;
-  bottom: 28px;
-  width: min(320px, calc(100vw - 32px));
-  height: 76px;
-  transform: translateX(-50%);
-  border: 2px solid rgba(255, 255, 255, 0.42);
-  border-radius: 8px;
-  color: #111111;
-  background: linear-gradient(180deg, #f8ff74, #00e675);
-  box-shadow:
-    0 10px 28px rgba(0, 0, 0, 0.35),
-    0 0 32px rgba(70, 255, 70, 0.42);
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: 0;
-  cursor: pointer;
-  pointer-events: auto;
-  touch-action: manipulation;
-}
+    position:absolute;
 
-.charge-button:active {
-  transform: translateX(-50%) translateY(3px) scale(0.98);
-}
+    left:50%;
+    bottom:40px;
 
-.charge-button:disabled {
-  cursor: default;
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(80, 80, 80, 0.72);
-  box-shadow: none;
-}
+    transform:translateX(-50%);
 
-/*
-  マウス/指の位置に追従する照準スコープ。
-  main.js で left/top を更新します。
-*/
-.scope {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  width: 112px;
-  height: 112px;
-  transform: translate(-50%, -50%);
-  z-index: 3;
-  border: 2px solid rgba(255, 255, 255, 0.88);
-  border-radius: 50%;
-  box-shadow:
-    0 0 0 1px rgba(255, 30, 30, 0.88),
-    0 0 22px rgba(0, 255, 80, 0.54),
-    inset 0 0 20px rgba(255, 0, 0, 0.18);
-  pointer-events: none;
-  transition: filter 120ms ease, border-color 120ms ease;
-}
+    width:240px;
+    height:90px;
 
-.scope::before,
-.scope::after {
-  content: "";
-  position: absolute;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
-}
+    font-size:34px;
+    font-weight:bold;
 
-.scope::before {
-  left: 50%;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  transform: translateX(-50%);
-}
+    border:none;
+    border-radius:20px;
 
-.scope::after {
-  left: 6px;
-  right: 6px;
-  top: 50%;
-  height: 2px;
-  transform: translateY(-50%);
-}
-
-/* スコープがモンスターに乗ったら光らせます。 */
-.scope.hit-ready {
-  border-color: #7dff75;
-  filter: drop-shadow(0 0 14px #45ff45) brightness(1.35);
-}
-
-/* 結果表示。通常時は透明にしておきます。 */
-.result {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  opacity: 0;
-  visibility: hidden;
-  background: rgba(0, 0, 0, 0.38);
-  text-align: center;
-  transition: opacity 240ms ease, visibility 240ms ease;
-  pointer-events: none;
-}
-
-.result.visible {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-}
-
-.result-panel {
-  width: min(420px, calc(100vw - 32px));
-  padding: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.72);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.52);
-  backdrop-filter: blur(10px);
-}
-
-.result-title {
-  margin: 0;
-  color: #76ff66;
-  font-size: clamp(34px, 8vw, 64px);
-  line-height: 0.95;
-  letter-spacing: 0;
-  text-shadow:
-    2px 0 #ff2828,
-    -2px 0 #14ff61,
-    0 0 22px rgba(118, 255, 102, 0.8);
-}
-
-.result-message {
-  margin: 14px 0 18px;
-  color: #ffffff;
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.restart-button {
-  min-width: 150px;
-  min-height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 8px;
-  color: #ffffff;
-  background: #20252d;
-  font-size: 16px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-@media (max-width: 560px) {
-  .topbar {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-  }
-
-  .status {
-    min-width: 88px;
-  }
-
-  .value {
-    font-size: 20px;
-  }
-
-  .scope {
-    width: 88px;
-    height: 88px;
-  }
+    cursor:pointer;
 }
