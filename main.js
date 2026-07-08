@@ -71,6 +71,14 @@ let gameFinished = false;
 // 元気玉の大きさ
 let ballScale = 1;
 
+// 元気玉を飛ばす？
+let isLaunching = false;
+
+// ラスボスを吹っ飛ばす？
+let bossFlying = false;
+
+// ラスボスが飛ぶ距離
+let bossTargetX = 0;
 // =====================================================
 // UI取得
 // =====================================================
@@ -230,6 +238,8 @@ function finishGame() {
 
     console.log("==========");
     console.log("TIME UP!");
+    // 元気玉発射開始
+    isLaunching = true;
     console.log("連打数：" + clickCount);
     console.log("==========");
 
@@ -278,8 +288,38 @@ function animate() {
     // -----------------------------
 
     // 元気玉を飛ばす
+    if (isLaunching) {
 
+    // 敵へ向かって進む
+    spiritBall.position.z -= 0.15;
+
+    // 敵に到達した？
+    if (spiritBall.position.z <= boss.position.z + 1) {
+
+        isLaunching = false;
+
+        bossFlying = true;
+
+        // 連打数で飛距離を決める
+        bossTargetX = clickCount * 0.08;
+
+    }
+
+}
     // ラスボスを吹っ飛ばす
+    if (bossFlying) {
+
+    if (boss.position.x < bossTargetX) {
+
+        boss.position.x += 0.1;
+
+        boss.position.y += 0.03;
+
+        boss.rotation.z -= 0.08;
+
+    }
+
+}
 
     // パーティクル
 
