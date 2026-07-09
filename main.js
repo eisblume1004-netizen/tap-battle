@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import * as THREE from "three";
 
 // =====================================================
 // Scene
@@ -354,19 +353,33 @@ function finishGame() {
         isLaunching = true;
     }, 1000);
 }
-
 // =====================================================
 // 元気玉発射
 // =====================================================
+
 function updateLaunch() {
-if (spiritBall.position.z <= boss.position.z + 1) {
 
-    isLaunching = false;
-    spiritBall.position.z = boss.position.z + 1;
+    // 発射中でなければ何もしない
+    if (!isLaunching) return;
 
-    console.log("元気玉が命中！");
+    // 元気玉を敵に向かって飛ばす
+    spiritBall.position.y += 0.025;
+    spiritBall.position.z -= 0.18;
 
-    isExplosion = true;
+    // 敵に命中したか確認
+    if (spiritBall.position.z <= boss.position.z + 1) {
+
+        // 発射終了
+        isLaunching = false;
+
+        // 元気玉の位置を敵の手前に固定
+        spiritBall.position.z = boss.position.z + 1;
+
+        console.log("元気玉が命中！");
+
+        // 爆発開始
+        isExplosion = true;
+    }
 }
 // =====================================================
 // 爆発
