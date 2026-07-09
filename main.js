@@ -332,22 +332,15 @@ function finishGame() {
 // 元気玉発射
 // =====================================================
 function updateLaunch() {
+if (spiritBall.position.z <= boss.position.z + 1) {
 
-    if (!isLaunching) return;
+    isLaunching = false;
+    spiritBall.position.z = boss.position.z + 1;
 
-    spiritBall.position.y += 0.025;
-    spiritBall.position.z -= 0.18;
+    console.log("元気玉が命中！");
 
-    if (spiritBall.position.z <= boss.position.z + 1) {
-
-        isLaunching = false;
-        spiritBall.position.z = boss.position.z + 1;
-
-        console.log("元気玉が命中！");
-        isExplosion = true;
-    }
+    isExplosion = true;
 }
-
 // =====================================================
 // 爆発
 // =====================================================
@@ -630,7 +623,10 @@ function animate() {
 
     updateSpiritBall();
     updateLaunch();
+
+    // 爆発
     updateExplosion();
+
     updateCameraShake();
     updateBossFly();
     updateStar();
@@ -639,7 +635,6 @@ function animate() {
 
     renderer.render(scene, camera);
 }
-
 // =====================================================
 // Start
 // =====================================================
