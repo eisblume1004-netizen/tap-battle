@@ -6,7 +6,7 @@ import * as THREE from "three";
 
 const scene = new THREE.Scene();
 
-// 仮背景（あとでジャングル画像へ変更）
+// 仮背景（あとで画像に変更）
 scene.background = new THREE.Color(0x87ceeb);
 
 // =====================================================
@@ -20,10 +20,7 @@ const camera = new THREE.PerspectiveCamera(
     100
 );
 
-// カメラ位置
 camera.position.set(0, 1.8, 8);
-
-// カメラが見る位置
 camera.lookAt(0, 0, -4);
 
 // =====================================================
@@ -35,17 +32,34 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+
 document.body.appendChild(renderer.domElement);
 
 // =====================================================
 // Light（ライト）
 // =====================================================
 
-scene.add(new THREE.AmbientLight(0xffffff, 2));
+// 環境光
+const ambientLight = new THREE.AmbientLight(
+    0xffffff,
+    2
+);
+scene.add(ambientLight);
 
-const light = new THREE.DirectionalLight(0xffffff, 2);
-light.position.set(5, 8, 5);
-scene.add(light);
+// 平行光
+const directionalLight = new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
+
+directionalLight.position.set(
+    5,
+    8,
+    5
+);
+
+scene.add(directionalLight);
 
 // =====================================================
 // Game（ゲーム変数）
@@ -57,23 +71,40 @@ let clickCount = 0;
 // 残り時間
 let timeLeft = 20;
 
-// ゲーム状態
+// ゲーム開始
 let gameStarted = false;
+
+// ゲーム終了
 let gameFinished = false;
+
+// カウントダウン中？
+let isCountingDown = false;
+
+// カウントダウン数字
+let countdown = 3;
 
 // 元気玉
 let ballScale = 1;
+
+// 発射中？
 let isLaunching = false;
 
-// 命中演出
-let isImpact = false;
-let impactStartTime = 0;
-const impactDuration = 300;
+// 爆発
+let isExplosion = false;
 
-// ラスボス
+// 画面揺れ
+let isShake = false;
+
+// ボス吹っ飛び
 let bossFlying = false;
 
-// 飛ぶ目標位置
+// GAME CLEAR
+let gameClear = false;
+
+// 星になる
+let showStar = false;
+
+// ボス飛距離
 let bossTargetX = 0;
 let bossTargetY = 0;
 let bossTargetZ = 0;
@@ -84,6 +115,7 @@ let bossTargetZ = 0;
 
 const timeText = document.getElementById("time");
 const countText = document.getElementById("count");
+const messageText = document.getElementById("message");
 
 // =====================================================
 // 元気玉
@@ -96,9 +128,13 @@ const ballGeometry = new THREE.SphereGeometry(
 );
 
 const ballMaterial = new THREE.MeshStandardMaterial({
-    color: 0x44ff44,
-    emissive: 0x44ff44,
-    emissiveIntensity: 2
+
+    color:0x44ff44,
+
+    emissive:0x44ff44,
+
+    emissiveIntensity:2
+
 });
 
 const spiritBall = new THREE.Mesh(
@@ -115,6 +151,36 @@ spiritBall.position.set(
 scene.add(spiritBall);
 
 // =====================================================
+// 爆発エフェクト（最初は見えない）
+// =====================================================
+
+const explosionGeometry = new THREE.SphereGeometry(
+    0.5,
+    32,
+    32
+);
+
+const explosionMaterial =
+new THREE.MeshBasicMaterial({
+
+    color:0xffffff,
+
+    transparent:true,
+
+    opacity:0
+
+});
+
+const explosion = new THREE.Mesh(
+    explosionGeometry,
+    explosionMaterial
+);
+
+explosion.visible = false;
+
+scene.add(explosion);
+
+// =====================================================
 // ラスボス（仮）
 // =====================================================
 
@@ -124,8 +190,11 @@ const bossGeometry = new THREE.BoxGeometry(
     2
 );
 
-const bossMaterial = new THREE.MeshStandardMaterial({
-    color: 0xaa2222
+const bossMaterial =
+new THREE.MeshStandardMaterial({
+
+    color:0xaa2222
+
 });
 
 const boss = new THREE.Mesh(
@@ -133,7 +202,6 @@ const boss = new THREE.Mesh(
     bossMaterial
 );
 
-// 少し奥に配置
 boss.position.set(
     0,
     0,
@@ -141,224 +209,29 @@ boss.position.set(
 );
 
 scene.add(boss);
+
 // =====================================================
-// Enterキー（連打処理）
+// 星（最後の演出）
 // =====================================================
 
-window.addEventListener("keydown", (event) => {
+const starGeometry = new THREE.SphereGeometry(
+    0.15,
+    16,
+    16
+);
 
-    // Enterキー以外は無視
-    if (event.code !== "Enter") return;
+const starMaterial =
+new THREE.MeshBasicMaterial({
 
-    // ゲーム終了後は連打できない
-    if (gameFinished) return;
-
-    // 最初のEnterでゲーム開始
-    if (!gameStarted) {
-        startGame();
-    }
-
-    // -----------------------------
-    // 連打数
-    // -----------------------------
-
-    clickCount++;
-
-    // UI更新
-    countText.textContent = clickCount;
-
-    // -----------------------------
-    // 元気玉を大きくする
-    // -----------------------------
-
-    ballScale += 0.03;
-
-    spiritBall.scale.set(
-        ballScale,
-        ballScale,
-        ballScale
-    );
+    color:0xffff66
 
 });
 
-// =====================================================
-// タイマー開始
-// =====================================================
+const star = new THREE.Mesh(
+    starGeometry,
+    starMaterial
+);
 
-function startGame() {
+star.visible = false;
 
-    gameStarted = true;
-
-    timeText.textContent = timeLeft;
-
-    const timer = setInterval(() => {
-
-        timeLeft--;
-
-        timeText.textContent = timeLeft;
-
-        // 時間切れ
-        if (timeLeft <= 0) {
-
-            clearInterval(timer);
-
-            gameFinished = true;
-
-            finishGame();
-
-        }
-
-    }, 1000);
-
-}
-
-// =====================================================
-// ゲーム終了
-// =====================================================
-
-function finishGame() {
-
-    console.log("==========");
-    console.log("TIME UP!");
-    console.log("連打数：" + clickCount);
-    console.log("==========");
-
-    // 元気玉発射開始
-    isLaunching = true;
-
-}
-
-// =====================================================
-// 画面サイズ変更
-// =====================================================
-
-window.addEventListener("resize", () => {
-
-    camera.aspect = window.innerWidth / window.innerHeight;
-
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-    );
-
-});
-// =====================================================
-// アニメーション
-// =====================================================
-
-function animate() {
-
-    requestAnimationFrame(animate);
-
-    // -------------------------------------------------
-    // 元気玉（回転）
-    // -------------------------------------------------
-
-    spiritBall.rotation.y += 0.01;
-
-    // -------------------------------------------------
-    // 元気玉発射
-    // -------------------------------------------------
-
-    if (isLaunching) {
-
-        // 敵へ向かって飛ぶ
-        spiritBall.position.z -= 0.18;
-
-        // 敵に当たった？
-        if (spiritBall.position.z <= boss.position.z + 1) {
-
-            isLaunching = false;
-
-            // 命中演出開始
-            isImpact = true;
-
-            impactStartTime = performance.now();
-
-        }
-
-    }
-
-    // -------------------------------------------------
-    // 命中演出（画面を揺らす）
-    // -------------------------------------------------
-
-    if (isImpact) {
-
-        // カメラをブルブル揺らす
-        camera.position.x = Math.random() * 0.12 - 0.06;
-        camera.position.y = 1.8 + Math.random() * 0.12 - 0.06;
-
-        // 0.3秒経過した？
-        if (performance.now() - impactStartTime > impactDuration) {
-
-            // カメラを元に戻す
-            camera.position.set(0, 1.8, 8);
-            camera.lookAt(0, 0, -4);
-
-            isImpact = false;
-
-            // ラスボス吹っ飛び開始
-            bossFlying = true;
-
-            // 飛ぶゴール
-            bossTargetX = clickCount * 0.08;
-            bossTargetY = 8;
-            bossTargetZ = -20;
-
-        }
-
-    }
-
-    // -------------------------------------------------
-    // ラスボス吹っ飛び
-    // （ばいきんまん風）
-    // -------------------------------------------------
-
-    if (bossFlying) {
-
-        // 斜め上へ
-        if (boss.position.x < bossTargetX) {
-            boss.position.x += 0.12;
-        }
-
-        if (boss.position.y < bossTargetY) {
-            boss.position.y += 0.08;
-        }
-
-        if (boss.position.z > bossTargetZ) {
-            boss.position.z -= 0.20;
-        }
-
-        // くるくる回転
-        boss.rotation.x += 0.20;
-        boss.rotation.y += 0.20;
-        boss.rotation.z += 0.20;
-
-        // ゴールしたら終了
-        if (
-            boss.position.x >= bossTargetX &&
-            boss.position.y >= bossTargetY &&
-            boss.position.z <= bossTargetZ
-        ) {
-
-            bossFlying = false;
-
-            console.log("GAME CLEAR!");
-
-        }
-
-    }
-
-    // -------------------------------------------------
-    // 描画
-    // -------------------------------------------------
-
-    renderer.render(scene, camera);
-
-}
-
-// ゲーム開始
-animate();
+scene.add(star);
