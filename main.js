@@ -179,7 +179,55 @@ const explosion = new THREE.Mesh(
 explosion.visible = false;
 
 scene.add(explosion);
+// =====================================================
+// 爆発パーティクル
+// =====================================================
 
+const explosionParticles = [];
+
+const explosionColors = [
+    0xff2200,
+    0xff6600,
+    0xffaa00,
+    0xffff00
+];
+
+for (let i = 0; i < 60; i++) {
+
+    const size = 0.08 + Math.random() * 0.18;
+
+    const geometry = new THREE.SphereGeometry(
+        size,
+        12,
+        12
+    );
+
+    const material = new THREE.MeshBasicMaterial({
+        color: explosionColors[
+            Math.floor(Math.random() * explosionColors.length)
+        ],
+        transparent: true,
+        opacity: 1
+    });
+
+    const particle = new THREE.Mesh(
+        geometry,
+        material
+    );
+
+    particle.visible = false;
+
+    // 四方八方に飛ぶ方向
+    particle.userData.velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.35,
+        (Math.random() - 0.5) * 0.35,
+        (Math.random() - 0.5) * 0.35
+    );
+
+    scene.add(particle);
+
+    explosionParticles.push(particle);
+}
 // =====================================================
 // ラスボス（仮）
 // =====================================================
@@ -410,7 +458,135 @@ function animate() {
     //元気玉発射
      updateLaunch();
     //爆発エフェクト
-    updateExplosion();
+    // =====================================================
+// 爆発アニメーション
+// =====================================================
+
+let explosionStarted = false;
+let explosionStartTime = 0;
+
+function updateExplosion() {
+
+    if (!isExplosion) return;
+
+
+    // =============================================
+    // 爆発開始
+    // =============================================
+
+    if (!explosionStarted) {
+
+        explosionStarted = true;
+
+        explosionStartTime = performance.now();
+
+        // 元気玉を消す
+        spiritBall.visible = false;
+
+
+        // -----------------------------------------
+        // 中心の閃光
+        // -----------------------------------------
+
+        explosion.visible = true;
+
+        explosion.position.copy(
+            spiritBall.position
+        );
+
+        explosion.scale.set(
+            0.5,
+            0.5,
+            0.5
+        );
+
+        explosionMaterial.opacity = 1;
+
+
+        // -----------------------------------------
+        // 爆発粒子を配置
+        // -----------------------------------------
+
+        for (const particle of explosionParticles) {
+
+            particle.position.copy(
+                spiritBall.position
+            );
+
+            particle.visible = true;
+
+            particle.material.opacity = 1;
+
+        }
+
+        console.log("ドカーン！！");
+    }
+
+
+    // =============================================
+    // 中心の火球
+    // =============================================
+
+    explosion.scale.multiplyScalar(1.15);
+
+    explosionMaterial.opacity -= 0.08;
+
+
+    // =============================================
+    // 火花を四方八方へ飛ばす
+    // =============================================
+
+    for (const particle of explosionParticles) {
+
+        particle.position.add(
+            particle.userData.velocity
+        );
+
+        // 少し減速
+        particle.userData.velocity.multiplyScalar(
+            0.97
+        );
+
+        // 粒を少しずつ小さくする
+        particle.scale.multiplyScalar(
+            0.97
+        );
+
+        // 徐々に透明にする
+        particle.material.opacity -= 0.018;
+
+    }
+
+
+    // =============================================
+    // 爆発終了
+    // =============================================
+
+    if (
+        performance.now() - explosionStartTime
+        > 1000
+    ) {
+
+        isExplosion = false;
+
+        explosionStarted = false;
+
+        explosion.visible = false;
+
+
+        for (const particle of explosionParticles) {
+
+            particle.visible = false;
+
+        }
+
+
+        // 次は画面揺れ
+        isShake = true;
+
+    }
+
+}
     //画面揺れ
     updateCameraShake();
     //ラスボスバイバイ
