@@ -1,9 +1,12 @@
 import * as THREE from "three";
+import * as THREE from "three";
 
 // =====================================================
 // Scene
 // =====================================================
+
 const scene = new THREE.Scene();
+
 // =====================================================
 // 背景画像
 // =====================================================
@@ -15,7 +18,6 @@ backgroundLoader.load(
 
     (texture) => {
 
-        // 背景画像として設定
         scene.background = texture;
 
         console.log("背景画像の読み込み成功！");
@@ -26,7 +28,7 @@ backgroundLoader.load(
     (error) => {
 
         console.error(
-            "背景画像の読み込みに失敗しました",
+            "背景画像の読み込み失敗",
             error
         );
     }
