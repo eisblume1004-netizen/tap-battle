@@ -235,3 +235,778 @@ const star = new THREE.Mesh(
 star.visible = false;
 
 scene.add(star);
+// =====================================================
+// UI表示関数
+// =====================================================
+
+function showMessage(text) {
+    messageText.textContent = text;
+    messageText.style.display = "block";
+}
+
+function hideMessage() {
+    messageText.textContent = "";
+    messageText.style.display = "none";
+}
+
+// =====================================================
+// Enterキー処理
+// =====================================================
+
+window.addEventListener("keydown", (event) => {
+
+    if (event.code !== "Enter") return;
+
+    // ゲーム終了後は無効
+    if (gameFinished) return;
+
+    // まだ始まっていない場合はカウントダウン開始
+    if (!gameStarted && !isCountingDown) {
+        startCountdown();
+        return;
+    }
+
+    // カウントダウン中は連打できない
+    if (isCountingDown) return;
+
+    // ゲーム開始後だけ連打できる
+    if (gameStarted) {
+        tapPower();
+    }
+
+});
+
+// =====================================================
+// カウントダウン開始
+// =====================================================
+
+function startCountdown() {
+
+    isCountingDown = true;
+    countdown = 3;
+
+    showMessage("READY");
+
+    setTimeout(() => {
+        showMessage(countdown);
+
+        const countdownTimer = setInterval(() => {
+
+            countdown--;
+
+            if (countdown > 0) {
+                showMessage(countdown);
+            } else {
+                clearInterval(countdownTimer);
+
+                showMessage("START!!");
+
+                setTimeout(() => {
+                    hideMessage();
+                    startGame();
+                }, 700);
+            }
+
+        }, 1000);
+
+    }, 800);
+
+}
+
+// =====================================================
+// ゲーム開始
+// =====================================================
+
+function startGame() {
+
+    gameStarted = true;
+    isCountingDown = false;
+
+    timeLeft = 20;
+    timeText.textContent = timeLeft;
+
+    const timer = setInterval(() => {
+
+        timeLeft--;
+        timeText.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            finishGame();
+        }
+
+    }, 1000);
+
+}
+
+// =====================================================
+// 連打処理
+// =====================================================
+
+function tapPower() {
+
+    clickCount++;
+    countText.textContent = clickCount;
+
+    ballScale += 0.03;
+
+    spiritBall.scale.set(
+        ballScale,
+        ballScale,
+        ballScale
+    );
+
+    // 押すほど少し光を強くする
+    ballMaterial.emissiveIntensity += 0.02;
+
+}
+
+// =====================================================
+// TIME UP
+// =====================================================
+
+function finishGame() {
+
+    gameFinished = true;
+    gameStarted = false;
+
+    showMessage("TIME UP!!");
+
+    setTimeout(() => {
+        hideMessage();
+
+        // 元気玉発射開始
+        isLaunching = true;
+
+    }, 1000);
+
+}
+// =====================================================
+// 画面サイズ変更
+// =====================================================
+
+window.addEventListener("resize", () => {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    );
+
+});
+
+// =====================================================
+// アニメーション更新
+// =====================================================
+
+function animate() {
+
+    requestAnimationFrame(animate);
+
+    // 元気玉を常にゆっくり回転
+    updateSpiritBall();
+    //元気玉発射
+     updateLaunch();
+    //爆発エフェクト
+    updateExplosion();
+    //画面揺れ
+    updateCameraShake();
+    //ラスボスバイバイ
+    updateBossFly();
+    //キラーン演出
+    updateStar();
+    //GAME CLEAR
+    updateGameClear();
+    updateConfetti();
+    
+    renderer.render(scene, camera);
+
+}
+
+// =====================================================
+// 元気玉の通常アニメーション
+// =====================================================
+
+function updateSpiritBall() {
+
+    spiritBall.rotation.y += 0.01;
+    spiritBall.rotation.x += 0.005;
+
+}
+
+// =====================================================
+// ゲーム描画開始
+// =====================================================
+
+animate();
+// =====================================================
+// ④ 元気玉発射アニメーション
+// =====================================================
+
+function updateLaunch() {
+
+    // 発射中でなければ何もしない
+    if (!isLaunching) return;
+
+    // -------------------------------------------------
+    // 元気玉をラスボスの方向へ移動
+    // -------------------------------------------------
+
+    // 少しずつ上へ
+    spiritBall.position.y += 0.025;
+
+    // 奥にいるラスボスへ進む
+    spiritBall.position.z -= 0.18;
+
+    // -------------------------------------------------
+    // ラスボスへの命中判定
+    // -------------------------------------------------
+
+    if (spiritBall.position.z <= boss.position.z + 1) {
+
+        // 発射終了
+        isLaunching = false;
+
+        // 元気玉をラスボスの近くに固定
+        spiritBall.position.z = boss.position.z + 1;
+
+        console.log("元気玉が命中！");
+
+        // ⑤で爆発処理を開始する
+        isExplosion = true;
+
+    }
+
+}
+// =====================================================
+// ⑤ 爆発エフェクト
+// =====================================================
+
+// 爆発の進行度
+let explosionScale = 0.1;
+
+// 爆発の透明度
+let explosionOpacity = 1;
+
+
+// =====================================================
+// 爆発アニメーション更新
+// =====================================================
+
+function updateExplosion() {
+
+    // 爆発中でなければ何もしない
+    if (!isExplosion) return;
+
+
+    // -------------------------------------------------
+    // 爆発開始時の準備
+    // -------------------------------------------------
+
+    if (!explosion.visible) {
+
+        // 爆発を表示
+        explosion.visible = true;
+
+        // 元気玉が命中した位置に爆発を移動
+        explosion.position.copy(spiritBall.position);
+
+        // 爆発サイズを初期化
+        explosionScale = 0.1;
+
+        explosion.scale.set(
+            explosionScale,
+            explosionScale,
+            explosionScale
+        );
+
+        // 透明度を初期化
+        explosionOpacity = 1;
+        explosionMaterial.opacity = explosionOpacity;
+
+        // 命中した元気玉を非表示
+        spiritBall.visible = false;
+
+        console.log("爆発開始！");
+    }
+
+
+    // -------------------------------------------------
+    // 爆発を大きくする
+    // -------------------------------------------------
+
+    explosionScale += 0.18;
+
+    explosion.scale.set(
+        explosionScale,
+        explosionScale,
+        explosionScale
+    );
+
+
+    // -------------------------------------------------
+    // 爆発を少しずつ透明にする
+    // -------------------------------------------------
+
+    explosionOpacity -= 0.025;
+
+    explosionMaterial.opacity = Math.max(
+        explosionOpacity,
+        0
+    );
+
+
+    // -------------------------------------------------
+    // 爆発終了判定
+    // -------------------------------------------------
+
+    if (explosionOpacity <= 0) {
+
+        // 爆発終了
+        isExplosion = false;
+
+        // 爆発を非表示
+        explosion.visible = false;
+
+        console.log("爆発終了！");
+
+        // ⑥で画面揺れを開始する
+        isShake = true;
+    }
+
+}
+// =====================================================
+// ⑥ 画面揺れエフェクト
+// =====================================================
+
+// 画面揺れを開始した時間
+let shakeStartTime = 0;
+
+// 画面を揺らす時間（ミリ秒）
+const shakeDuration = 500;
+
+// 揺れの強さ
+const shakePower = 0.12;
+
+// 画面揺れが始まったかどうか
+let shakeStarted = false;
+
+
+// =====================================================
+// 画面揺れアニメーション更新
+// =====================================================
+
+function updateCameraShake() {
+
+    // 揺れ中でなければ何もしない
+    if (!isShake) return;
+
+
+    // -------------------------------------------------
+    // 揺れ開始時の準備
+    // -------------------------------------------------
+
+    if (!shakeStarted) {
+
+        shakeStarted = true;
+
+        // 揺れ開始時刻を記録
+        shakeStartTime = performance.now();
+
+        console.log("画面揺れ開始！");
+    }
+
+
+    // -------------------------------------------------
+    // カメラをランダムに動かす
+    // -------------------------------------------------
+
+    camera.position.x =
+        (Math.random() - 0.5) * shakePower;
+
+    camera.position.y =
+        1.8 + (Math.random() - 0.5) * shakePower;
+
+
+    // -------------------------------------------------
+    // 揺れ終了判定
+    // -------------------------------------------------
+
+    if (
+        performance.now() - shakeStartTime
+        >= shakeDuration
+    ) {
+
+        // 画面揺れ終了
+        isShake = false;
+
+        // 次回用にリセット
+        shakeStarted = false;
+
+        // カメラを元の位置へ戻す
+        camera.position.set(
+            0,
+            1.8,
+            8
+        );
+
+        // カメラの向きも戻す
+        camera.lookAt(
+            0,
+            0,
+            -4
+        );
+
+        console.log("画面揺れ終了！");
+
+        // ラスボス吹っ飛び開始
+        startBossFly();
+    }
+
+}
+
+
+// =====================================================
+// ラスボス吹っ飛び準備
+// =====================================================
+
+function startBossFly() {
+
+    // 吹っ飛び状態にする
+    bossFlying = true;
+
+
+    // -------------------------------------------------
+    // 連打数によって横方向の飛距離を変更
+    // -------------------------------------------------
+
+    // 最低でも右方向へ4飛ぶ
+    // 連打数が多いほどさらに遠くへ飛ぶ
+    bossTargetX = 4 + clickCount * 0.04;
+
+
+    // -------------------------------------------------
+    // 上方向の目標
+    // -------------------------------------------------
+
+    bossTargetY = 7;
+
+
+    // -------------------------------------------------
+    // 奥方向の目標
+    // -------------------------------------------------
+
+    bossTargetZ = -25;
+
+
+    console.log("ラスボス吹っ飛び開始！");
+}
+// =====================================================
+// ⑦ ラスボス吹っ飛び
+// くるくる回転しながら、斜め上＋奥へ飛ぶ
+// =====================================================
+
+function updateBossFly() {
+
+    // 吹っ飛び中でなければ何もしない
+    if (!bossFlying) return;
+
+    // -------------------------------------------------
+    // 斜め上・奥へ移動
+    // -------------------------------------------------
+
+    boss.position.x += 0.14;
+    boss.position.y += 0.08;
+    boss.position.z -= 0.22;
+
+    // -------------------------------------------------
+    // ばいきんまん風にくるくる回転
+    // -------------------------------------------------
+
+    boss.rotation.x += 0.22;
+    boss.rotation.y += 0.18;
+    boss.rotation.z += 0.25;
+
+    // -------------------------------------------------
+    // 奥へ飛んでいるように少しずつ小さくする
+    // -------------------------------------------------
+
+    boss.scale.x *= 0.985;
+    boss.scale.y *= 0.985;
+    boss.scale.z *= 0.985;
+
+    // -------------------------------------------------
+    // 目標位置まで飛んだら終了
+    // -------------------------------------------------
+
+    if (
+        boss.position.x >= bossTargetX ||
+        boss.position.y >= bossTargetY ||
+        boss.position.z <= bossTargetZ
+    ) {
+
+        bossFlying = false;
+
+        // 星演出を開始
+        startStarEffect();
+
+        console.log("ラスボス吹っ飛び終了！");
+    }
+
+}
+
+// =====================================================
+// 星キラーン演出の準備
+// =====================================================
+
+function startStarEffect() {
+
+    showStar = true;
+
+    // ボスが消えた位置に星を出す
+    star.position.copy(boss.position);
+
+    // 星は少し大きめに表示
+    star.scale.set(
+        1,
+        1,
+        1
+    );
+
+    star.visible = true;
+
+    // ボスは見えなくする
+    boss.visible = false;
+
+    console.log("星キラーン開始！");
+}
+// =====================================================
+// ⑧ 星キラーン演出
+// =====================================================
+
+// 星演出の開始時間
+let starStartTime = 0;
+
+// 星演出が始まったかどうか
+let starStarted = false;
+
+// 星演出の時間
+const starDuration = 900;
+
+
+// =====================================================
+// 星キラーン更新
+// =====================================================
+
+function updateStar() {
+
+    if (!showStar) return;
+
+    // -------------------------------------------------
+    // 星演出開始時の準備
+    // -------------------------------------------------
+
+    if (!starStarted) {
+
+        starStarted = true;
+        starStartTime = performance.now();
+
+        console.log("星キラーン表示！");
+    }
+
+    // -------------------------------------------------
+    // 星をキラッと回転・拡大
+    // -------------------------------------------------
+
+    star.rotation.x += 0.18;
+    star.rotation.y += 0.22;
+    star.rotation.z += 0.25;
+
+    star.scale.x += 0.02;
+    star.scale.y += 0.02;
+    star.scale.z += 0.02;
+
+    // -------------------------------------------------
+    // 一定時間後に終了
+    // -------------------------------------------------
+
+    if (
+        performance.now() - starStartTime
+        >= starDuration
+    ) {
+
+        showStar = false;
+        star.visible = false;
+        starStarted = false;
+
+        console.log("星キラーン終了！");
+
+        // GAME CLEARへ
+        showGameClear();
+
+    }
+
+}
+// =====================================================
+// ⑨ GAME CLEAR表示
+// =====================================================
+
+// GAME CLEARが表示されたか
+let gameClearStarted = false;
+
+
+// =====================================================
+// GAME CLEAR開始
+// =====================================================
+
+function showGameClear() {
+
+    // 二重実行を防止
+    if (gameClearStarted) return;
+
+    gameClearStarted = true;
+    gameClear = true;
+
+    // 画面中央に表示
+    showMessage("GAME CLEAR!!");
+
+    console.log("GAME CLEAR!!");
+
+    // ⑩で紙吹雪を開始する
+    startConfetti();
+
+}
+
+
+// =====================================================
+// GAME CLEAR更新
+// =====================================================
+
+function updateGameClear() {
+
+    // GAME CLEAR状態でなければ何もしない
+    if (!gameClear) return;
+
+    // 少しだけ文字を大きくしたり小さくしたりする
+    const pulse =
+        1 + Math.sin(performance.now() * 0.006) * 0.08;
+
+    messageText.style.transform =
+        `translate(-50%, -50%) scale(${pulse})`;
+
+}
+// =====================================================
+// ⑩ 紙吹雪エフェクト
+// =====================================================
+
+const confettiPieces = [];
+let confettiStarted = false;
+
+// 紙吹雪の数
+const confettiCount = 80;
+
+
+// =====================================================
+// 紙吹雪を作る
+// =====================================================
+
+function createConfetti() {
+
+    for (let i = 0; i < confettiCount; i++) {
+
+        const geometry = new THREE.BoxGeometry(
+            0.08,
+            0.08,
+            0.02
+        );
+
+        const material = new THREE.MeshBasicMaterial({
+            color: new THREE.Color(
+                Math.random(),
+                Math.random(),
+                Math.random()
+            )
+        });
+
+        const piece = new THREE.Mesh(
+            geometry,
+            material
+        );
+
+        piece.position.set(
+            (Math.random() - 0.5) * 8,
+            5 + Math.random() * 4,
+            -2 + Math.random() * 4
+        );
+
+        piece.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+
+        piece.userData = {
+            fallSpeed: 0.02 + Math.random() * 0.04,
+            spinSpeedX: Math.random() * 0.08,
+            spinSpeedY: Math.random() * 0.08,
+            spinSpeedZ: Math.random() * 0.08
+        };
+
+        piece.visible = false;
+
+        scene.add(piece);
+        confettiPieces.push(piece);
+    }
+
+}
+
+createConfetti();
+
+
+// =====================================================
+// 紙吹雪開始
+// =====================================================
+
+function startConfetti() {
+
+    if (confettiStarted) return;
+
+    confettiStarted = true;
+
+    for (const piece of confettiPieces) {
+        piece.visible = true;
+    }
+
+    console.log("紙吹雪開始！");
+}
+
+
+// =====================================================
+// 紙吹雪更新
+// =====================================================
+
+function updateConfetti() {
+
+    if (!confettiStarted) return;
+
+    for (const piece of confettiPieces) {
+
+        piece.position.y -= piece.userData.fallSpeed;
+
+        piece.rotation.x += piece.userData.spinSpeedX;
+        piece.rotation.y += piece.userData.spinSpeedY;
+        piece.rotation.z += piece.userData.spinSpeedZ;
+
+        if (piece.position.y < -3) {
+
+            piece.position.y = 5 + Math.random() * 3;
+            piece.position.x = (Math.random() - 0.5) * 8;
+            piece.position.z = -2 + Math.random() * 4;
+
+        }
+
+    }
+
+}
