@@ -4,8 +4,33 @@ import * as THREE from "three";
 // Scene
 // =====================================================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
+// =====================================================
+// 背景画像
+// =====================================================
 
+const backgroundLoader = new THREE.TextureLoader();
+
+backgroundLoader.load(
+    "./images/background1.png",
+
+    (texture) => {
+
+        // 背景画像として設定
+        scene.background = texture;
+
+        console.log("背景画像の読み込み成功！");
+    },
+
+    undefined,
+
+    (error) => {
+
+        console.error(
+            "背景画像の読み込みに失敗しました",
+            error
+        );
+    }
+);
 // =====================================================
 // Camera
 // =====================================================
