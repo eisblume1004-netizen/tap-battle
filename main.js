@@ -87,6 +87,21 @@ let bossTargetY = 0;
 let bossTargetZ = 0;
 
 // =====================================================
+// ラスボス吹っ飛び用
+// =====================================================
+
+// 吹っ飛びアニメーションの進み具合
+let bossFlyProgress = 0;
+
+// 吹っ飛ぶ前の位置
+const bossFlyStartPosition = new THREE.Vector3();
+
+// 吹っ飛んだあとの目標位置
+const bossFlyTargetPosition = new THREE.Vector3();
+
+// 吹っ飛ぶ前の大きさ
+let bossStartScale = 1;
+// =====================================================
 // UI
 // =====================================================
 const timeText = document.getElementById("time");
@@ -119,19 +134,56 @@ spiritBall.position.set(0, -1.0, 2);
 scene.add(spiritBall);
 
 // =====================================================
-// ラスボス
+// ラスボス画像
 // =====================================================
-const bossGeometry = new THREE.BoxGeometry(2, 3, 2);
 
-const bossMaterial = new THREE.MeshStandardMaterial({
-    color: 0xaa2222
+const bossTextureLoader = new THREE.TextureLoader();
+
+const bossTexture = bossTextureLoader.load(
+    "./images/mon1.png",
+
+    (texture) => {
+
+        // 元画像の縦横比を取得
+        const imageWidth = texture.image.width;
+        const imageHeight = texture.image.height;
+        const aspect = imageWidth / imageHeight;
+
+        // 高さを基準にして、横幅を自動計算
+        const bossHeight = 4.6;
+        const bossWidth = bossHeight * aspect;
+
+        boss.scale.set(
+            bossWidth,
+            bossHeight,
+            1
+        );
+
+        console.log("ボス画像の比率調整完了");
+    }
+);
+
+const bossMaterial = new THREE.SpriteMaterial({
+    map: bossTexture,
+    transparent: true
 });
 
-const boss = new THREE.Mesh(bossGeometry, bossMaterial);
-boss.position.set(0, 0, -4);
+const boss = new THREE.Sprite(bossMaterial);
+
+// 足元を基準にする
+boss.center.set(0.5, 0);
+
+// 地面付近に配置
+boss.position.set(
+    0,
+    -1.55,
+    -2.5
+);
+// ボスが通常時に浮く基準位置
+const bossBasePosition = boss.position.clone();
 scene.add(boss);
 
-// =====================================================
+/// =====================================================
 // 爆発の中心光
 // =====================================================
 const explosionGeometry = new THREE.SphereGeometry(0.7, 32, 32);
@@ -325,19 +377,42 @@ function startGame() {
 
 // =====================================================
 // 連打
+// 小さい子でも少ない連打で変化を感じられる設定
 // =====================================================
+
 function tapPower() {
 
+    // 連打数を増やす
     clickCount++;
+
+    // 画面の連打数を更新
     countText.textContent = clickCount;
 
-    ballScale += 0.03;
+    // -------------------------------------------------
+    // 元気玉の大きさ
+    // -------------------------------------------------
+    // 1回につき0.08ずつ大きくする
+    // 最大4.2倍まで
+    ballScale = Math.min(
+        1 + clickCount * 0.08,
+        4.2
+    );
 
-    spiritBall.scale.set(ballScale, ballScale, ballScale);
+    spiritBall.scale.set(
+        ballScale,
+        ballScale,
+        ballScale
+    );
 
-    ballMaterial.emissiveIntensity += 0.02;
+    // -------------------------------------------------
+    // 元気玉の光
+    // -------------------------------------------------
+    // 少ない連打でも光が強くなる
+    ballMaterial.emissiveIntensity = Math.min(
+        2 + clickCount * 0.08,
+        6
+    );
 }
-
 // =====================================================
 // TIME UP
 // =====================================================
@@ -480,47 +555,176 @@ function updateCameraShake() {
 
 // =====================================================
 // ラスボス吹っ飛び開始
+// 元気玉の大きさに応じて飛距離を細かく変える
 // =====================================================
+
 function startBossFly() {
 
+    // 二重実行を防止
     if (bossFlying) return;
 
     bossFlying = true;
 
-    bossTargetX = 4 + clickCount * 0.04;
-    bossTargetY = 7;
-    bossTargetZ = -25;
+    // 吹っ飛びアニメーションを最初に戻す
+    bossFlyProgress = 0;
+
+    // 現在の位置を保存
+    bossFlyStartPosition.copy(boss.position);
+
+    // 現在の大きさを保存
+    bossStartScale = boss.scale.x;
+
+    // -------------------------------------------------
+    // 元気玉の大きさによる飛距離
+    // -------------------------------------------------
+
+    let flyDistance;
+
+    if (ballScale < 1.4) {
+
+        // 0〜4回程度
+        flyDistance = 4;
+
+    } else if (ballScale < 1.8) {
+
+        // 5〜9回程度
+        flyDistance = 6;
+
+    } else if (ballScale < 2.2) {
+
+        // 10〜14回程度
+        flyDistance = 8;
+
+    } else if (ballScale < 2.6) {
+
+        // 15〜19回程度
+        flyDistance = 10;
+
+    } else if (ballScale < 3.0) {
+
+        // 20〜24回程度
+        flyDistance = 12;
+
+    } else if (ballScale < 3.4) {
+
+        // 25〜29回程度
+        flyDistance = 14;
+
+    } else if (ballScale < 3.8) {
+
+        // 30〜34回程度
+        flyDistance = 16;
+
+    } else if (ballScale < 4.2) {
+
+        // 35〜39回程度
+        flyDistance = 18;
+
+    } else {
+
+        // 40回以上
+        flyDistance = 20;
+    }
+
+    // -------------------------------------------------
+    // 飛んでいく目標位置
+    // -------------------------------------------------
+
+    bossFlyTargetPosition.set(
+
+        // 右方向
+        boss.position.x + flyDistance * 0.55,
+
+        // 上方向
+        boss.position.y + flyDistance * 0.38,
+
+        // 奥方向
+        boss.position.z - flyDistance
+    );
 
     console.log("ラスボス吹っ飛び開始！");
+    console.log("連打数：" + clickCount);
+    console.log("元気玉サイズ：" + ballScale);
+    console.log("飛距離：" + flyDistance);
 }
 
 // =====================================================
 // ラスボス吹っ飛び
+// くるくる回転しながら、斜め上・奥へ飛ぶ
 // =====================================================
+
 function updateBossFly() {
 
+    // 吹っ飛び中でなければ何もしない
     if (!bossFlying) return;
 
-    boss.position.x += 0.14;
-    boss.position.y += 0.08;
-    boss.position.z -= 0.22;
+    // アニメーションを進める
+    bossFlyProgress += 0.012;
 
-    boss.rotation.x += 0.22;
-    boss.rotation.y += 0.18;
-    boss.rotation.z += 0.25;
+    // 0〜1の範囲に収める
+    const progress = Math.min(
+        bossFlyProgress,
+        1
+    );
 
-    boss.scale.multiplyScalar(0.985);
+    // 最初は速く、最後はゆっくりになる動き
+    const easedProgress =
+        1 - Math.pow(1 - progress, 3);
 
-    if (
-        boss.position.x >= bossTargetX ||
-        boss.position.y >= bossTargetY ||
-        boss.position.z <= bossTargetZ
-    ) {
+    // -------------------------------------------------
+    // 開始位置から目標位置へ移動
+    // -------------------------------------------------
+
+    boss.position.lerpVectors(
+        bossFlyStartPosition,
+        bossFlyTargetPosition,
+        easedProgress
+    );
+
+    // -------------------------------------------------
+    // 少し弧を描いて上へ飛ばす
+    // -------------------------------------------------
+
+    const arcHeight =
+        Math.sin(progress * Math.PI) * 2;
+
+    boss.position.y += arcHeight;
+
+    // -------------------------------------------------
+    // くるくる回転
+    // -------------------------------------------------
+     // モンスター画像を上下反転しながら回す
+       boss.material.rotation = progress * Math.PI * 8;
+    // -------------------------------------------------
+    // 奥へ行くほど小さくする
+    // -------------------------------------------------
+
+    const newScale = THREE.MathUtils.lerp(
+        bossStartScale,
+        0.08,
+        easedProgress
+    );
+
+    boss.scale.set(
+        newScale,
+        newScale,
+        newScale
+    );
+
+    // -------------------------------------------------
+    // 吹っ飛び終了
+    // -------------------------------------------------
+
+    if (progress >= 1) {
+
         bossFlying = false;
+
+        // 星キラーン演出へ
         startStarEffect();
+
+        console.log("ラスボス吹っ飛び終了！");
     }
 }
-
 // =====================================================
 // 星キラーン
 // =====================================================
@@ -641,6 +845,41 @@ function updateSpiritBall() {
 }
 
 // =====================================================
+// ボスの通常飛行アニメーション
+// 上下にふわふわしながら、少し左右に動く
+// =====================================================
+
+function updateBossIdle() {
+
+    // 吹っ飛び中や消えた後は動かさない
+    if (
+        bossFlying ||
+        isExplosion ||
+        showStar ||
+        gameClear ||
+        !boss.visible
+    ) {
+        return;
+    }
+
+    // 経過時間
+    const time = performance.now() * 0.001;
+
+    // 上下にふわふわ
+    boss.position.y =
+        bossBasePosition.y +
+        Math.sin(time * 2.2) * 0.35;
+
+    // 少し左右にも揺れる
+    boss.position.x =
+        bossBasePosition.x +
+        Math.sin(time * 1.3) * 0.18;
+
+    // 左右に少し傾ける
+    boss.material.rotation =
+    Math.sin(time * 2.2) * 0.08;
+}
+// =====================================================
 // Resize
 // =====================================================
 window.addEventListener("resize", () => {
@@ -662,6 +901,7 @@ function animate() {
     requestAnimationFrame(animate);
 
     updateSpiritBall();
+    updateBossIdle();
     updateLaunch();
 
     // 爆発
