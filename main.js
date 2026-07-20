@@ -101,6 +101,9 @@ let bossImageReady = false;
 let levelCleared = false;
 let failureResultStarted = false;
 let failureSequenceActive = false;
+// 元気玉跳ね返し
+let isBallReflected = false;
+let reflectedBallTime = 0;
 
 let ballScale = 1;
 
@@ -834,54 +837,82 @@ function startFailureResult() {
     failureResultStarted = true;
     failureSequenceActive = true;
 
-    showMessage("威力が弱かった！");
+    showMessage("はじき返された！");
 
-    // 命中した元気玉を少し見せてから消す
-    setTimeout(() => {
-        spiritBall.visible = false;
-    }, 450);
+    // 元気玉をそのまま表示
+    spiritBall.visible = true;
 
-    // 敵を左右に小さく揺らす
-    const originalX = bossBasePosition.x;
-    let shakeCount = 0;
+    // 跳ね返し開始
+    isBallReflected = true;
+    reflectedBallTime = 0;
 
-    const weakHitShake = setInterval(() => {
+    // 少し敵を震わせる
+    let shake = 0;
 
-        shakeCount++;
+    const shakeTimer = setInterval(() => {
 
-        boss.position.x =
-            originalX +
-            (shakeCount % 2 === 0 ? 0.18 : -0.18);
+        shake++;
 
-        if (shakeCount >= 10) {
+        boss.material.rotation =
+            (shake % 2 === 0 ? 0.18 : -0.18);
 
-            clearInterval(weakHitShake);
+        if (shake > 8) {
 
-            boss.position.x = bossBasePosition.x;
-            boss.position.y = bossBasePosition.y;
+            clearInterval(shakeTimer);
+
             boss.material.rotation = 0;
         }
 
-    }, 55);
+    }, 50);
 
-    // 威力不足を見せたあと、ゲーム失敗を表示
-    setTimeout(() => {
+}
 
-        const remainingCount =
-            Math.max(targetCount - clickCount, 0);
+function updateReflectedBall(deltaSeconds){
+
+    if(!isBallReflected) return;
+
+    reflectedBallTime += deltaSeconds;
+
+    // プレイヤー側へ飛ぶ
+    spiritBall.position.z +=
+        10 * deltaSeconds;
+
+    // 少し下へ落ちる
+    spiritBall.position.y -=
+        3 * deltaSeconds;
+
+    // クルクル回転
+    spiritBall.rotation.x +=
+        12 * deltaSeconds;
+
+    spiritBall.rotation.z +=
+        8 * deltaSeconds;
+
+    ballGlowLight.position.copy(
+        spiritBall.position
+    );
+
+    // 少しずつ小さくなる
+    spiritBall.scale.multiplyScalar(
+        Math.pow(0.97,deltaSeconds*60)
+    );
+
+    if(reflectedBallTime>=1.0){
+
+        isBallReflected=false;
+
+        spiritBall.visible=false;
+
+        document.body.style.background=
+            "rgba(0,0,0,0.85)";
 
         showMessage(
-            "ゲームしっぱい！ あと" +
-            remainingCount +
-            "回だった！"
+            "GAME OVER\nあと"+
+            (targetCount-clickCount)+
+            "回だった..."
         );
+    }
 
-        console.log("ゲーム失敗");
-        console.log("選択レベル：" + selectedLevel);
-        console.log("目標回数：" + targetCount);
-        console.log("実際の回数：" + clickCount);
-
-    }, 1800);
 }
 // =====================================================
 // 爆発
@@ -1420,7 +1451,7 @@ function animate() {
     }
 
     updateLaunch(deltaSeconds);
-
+    updateReflectedBall(deltaSeconds);
     // 爆発
     updateExplosion(deltaSeconds);
 
