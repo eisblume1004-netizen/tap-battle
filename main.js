@@ -228,7 +228,7 @@ let enemyIntroFinished = false;
 let enemyIntroProgress = 0;
 
 // 登場にかかる時間
-const ENEMY_INTRO_DURATION = 1.2;
+const ENEMY_INTRO_DURATION = 4.0;
 
 // 登場前と登場後の位置・大きさ
 const bossIntroStartPosition = new THREE.Vector3();
@@ -265,7 +265,8 @@ function startEnemyIntro() {
     // 最初はとても小さくする
     boss.scale.copy(bossIntroStartScale);
 
-    boss.visible = true;
+    // 最初はまだ表示しない
+　　boss.visible = false;
 
     showMessage("敵があらわれた！");
 }
@@ -279,6 +280,23 @@ function updateEnemyIntro(deltaSeconds) {
 
     if (!enemyIntroStarted) return;
     if (enemyIntroFinished) return;
+
+    // 最初の0.8秒は文字だけ表示
+if (enemyIntroProgress < 0.8) {
+
+    enemyIntroProgress += deltaSeconds;
+
+    if (enemyIntroProgress >= 0.8) {
+
+        // ここで敵を出現させる
+        boss.visible = true;
+
+        // アニメーション開始用にリセット
+        enemyIntroProgress = 0;
+    }
+
+    return;
+}
 
     // アニメーションを進める
     enemyIntroProgress +=
@@ -324,7 +342,7 @@ function updateEnemyIntro(deltaSeconds) {
 
         setTimeout(() => {
 
-            showMessage("ENTERでスタート！");
+            showMessage(スタート！");
 
         }, 800);
     }
