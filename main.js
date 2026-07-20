@@ -169,7 +169,7 @@ scene.add(spiritBall);
 
 const bossTextureLoader = new THREE.TextureLoader();
 
-// 敵の表示サイズ（高さ基準）。以前よりさらに大きく迫力のある表示に。
+// 敵の表示サイズ（高さ基準）。
 const BOSS_HEIGHT = 7.5;
 
 const bossTexture = bossTextureLoader.load(
@@ -285,7 +285,7 @@ function updateEnemyIntro(deltaSeconds) {
     enemyIntroProgress += deltaSeconds;
 
     // 最初の0.6秒間は文字だけ表示
-    if (enemyIntroProgress < 0.6) {
+    if (enemyIntroProgress < 0.8) {
         return;
     }
 
@@ -301,7 +301,7 @@ function updateEnemyIntro(deltaSeconds) {
 
     // 登場アニメーションの進み具合
     const animationTime =
-        enemyIntroProgress - 0.6;
+        enemyIntroProgress - 0.3;
 
     const progress = Math.min(
         animationTime / ENEMY_INTRO_DURATION,
