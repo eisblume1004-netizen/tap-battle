@@ -24,6 +24,33 @@
 
 <div id="message"></div>
 <script type="module" src="main.js"></script>
+<!-- レベル選択画面：index.html の </body> の直前に追加 -->
+<div id="levelSelect">
+    <div id="levelSelectPanel">
+        <h1>レベルをえらんでね！</h1>
+        <p class="levelDescription">20びょうでボタンをたくさんおそう！</p>
+
+        <div id="levelButtons">
+            <button type="button" class="levelButton" data-level="A" data-target="10">
+                <span class="levelName">A</span>
+                <span class="levelText">やさしい</span>
+                <span class="levelTarget">10回以上</span>
+            </button>
+
+            <button type="button" class="levelButton" data-level="B" data-target="25">
+                <span class="levelName">B</span>
+                <span class="levelText">ふつう</span>
+                <span class="levelTarget">25回以上</span>
+            </button>
+
+            <button type="button" class="levelButton" data-level="C" data-target="40">
+                <span class="levelName">C</span>
+                <span class="levelText">むずかしい</span>
+                <span class="levelTarget">40回以上</span>
+            </button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
