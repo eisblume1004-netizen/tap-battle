@@ -62,6 +62,25 @@ const light = new THREE.DirectionalLight(0xffffff, 2);
 light.position.set(5, 8, 5);
 scene.add(light);
 
+// 元気玉自身の発光を周囲にも反映させるためのポイントライト
+const ballGlowLight = new THREE.PointLight(0xffee00, 4, 8, 2);
+scene.add(ballGlowLight);
+
+// =====================================================
+// フレームレート非依存の基準値
+// =====================================================
+// 以下の速度・変化量はすべて「1秒あたり」の量として定義し、
+// 毎フレーム deltaSeconds を掛けて適用する。
+// これにより端末のリフレッシュレート（60fps/120fpsなど）が
+// 違っても同じ速さ・同じ動きで進行する。
+const FPS_BASE = 60;
+
+// per-frame（60fps基準）の減衰率を、任意のdeltaSecondsに
+// 対応する減衰率へ変換するヘルパー
+function decayPerSecond(perFrameFactor, deltaSeconds) {
+    return Math.pow(perFrameFactor, deltaSeconds * FPS_BASE);
+}
+
 // =====================================================
 // Game変数
 // =====================================================
@@ -75,6 +94,8 @@ let countdown = 3;
 
 let ballScale = 1;
 
+let lastFrameTime = performance.now();
+
 let isLaunching = false;
 let isExplosion = false;
 let isShake = false;
@@ -82,16 +103,15 @@ let bossFlying = false;
 let showStar = false;
 let gameClear = false;
 
-let bossTargetX = 0;
-let bossTargetY = 0;
-let bossTargetZ = 0;
-
 // =====================================================
 // ラスボス吹っ飛び用
 // =====================================================
 
-// 吹っ飛びアニメーションの進み具合
+// 吹っ飛びアニメーションの進み具合（0〜1）
 let bossFlyProgress = 0;
+
+// 吹っ飛びの進行速度（1秒あたり）
+const BOSS_FLY_SPEED = 0.012 * FPS_BASE;
 
 // 吹っ飛ぶ前の位置
 const bossFlyStartPosition = new THREE.Vector3();
@@ -101,6 +121,7 @@ const bossFlyTargetPosition = new THREE.Vector3();
 
 // 吹っ飛ぶ前の大きさ
 let bossStartScale = 1;
+
 // =====================================================
 // UI
 // =====================================================
@@ -109,8 +130,15 @@ const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 
 function showMessage(text) {
+
     messageText.textContent = text;
     messageText.style.display = "block";
+
+    // アニメーションを毎回リスタートさせるため、
+    // 一度アニメーションを外してから再度付け直す
+    messageText.style.animation = "none";
+    void messageText.offsetWidth; // 強制リフロー
+    messageText.style.animation = "";
 }
 
 function hideMessage() {
@@ -124,9 +152,11 @@ function hideMessage() {
 const ballGeometry = new THREE.SphereGeometry(0.15, 64, 64);
 
 const ballMaterial = new THREE.MeshStandardMaterial({
-    color: 0x44ff44,
-    emissive: 0x44ff44,
-    emissiveIntensity: 2
+    color: 0xffee00,
+    emissive: 0xffee00,
+    // 発光を強化（明るく、より眩しい元気玉に）
+    emissiveIntensity: 2,
+    toneMapped: false
 });
 
 const spiritBall = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -139,6 +169,9 @@ scene.add(spiritBall);
 
 const bossTextureLoader = new THREE.TextureLoader();
 
+// 敵の表示サイズ（高さ基準）。以前よりさらに大きく迫力のある表示に。
+const BOSS_HEIGHT = 7.5;
+
 const bossTexture = bossTextureLoader.load(
     "./images/mon1.png",
 
@@ -150,12 +183,11 @@ const bossTexture = bossTextureLoader.load(
         const aspect = imageWidth / imageHeight;
 
         // 高さを基準にして、横幅を自動計算
-        const bossHeight = 4.6;
-        const bossWidth = bossHeight * aspect;
+        const bossWidth = BOSS_HEIGHT * aspect;
 
         boss.scale.set(
             bossWidth,
-            bossHeight,
+            BOSS_HEIGHT,
             1
         );
 
@@ -183,7 +215,7 @@ boss.position.set(
 const bossBasePosition = boss.position.clone();
 scene.add(boss);
 
-/// =====================================================
+// =====================================================
 // 爆発の中心光
 // =====================================================
 const explosionGeometry = new THREE.SphereGeometry(0.7, 32, 32);
@@ -239,17 +271,76 @@ for (let i = 0; i < 80; i++) {
 }
 
 // =====================================================
-// 星
+// 星（ひし形スパークル）
 // =====================================================
-const starGeometry = new THREE.SphereGeometry(0.2, 16, 16);
 
-const starMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffff66
-});
+// 4方向にとがったキラキラ星（ひし形っぽいスパークル）の形状を作る
+function createSparkleStarShape(outerRadius, innerRadius) {
 
-const star = new THREE.Mesh(starGeometry, starMaterial);
-star.visible = false;
-scene.add(star);
+    const shape = new THREE.Shape();
+    const spikes = 4;
+    const step = Math.PI / spikes;
+
+    for (let i = 0; i < spikes * 2; i++) {
+
+        const r = (i % 2 === 0) ? outerRadius : innerRadius;
+        const angle = i * step;
+
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+
+        if (i === 0) {
+            shape.moveTo(x, y);
+        } else {
+            shape.lineTo(x, y);
+        }
+    }
+
+    shape.closePath();
+    return shape;
+}
+
+const sparkleColors = [
+    0xfff176,
+    0xffd700,
+    0xffb300,
+    0xffffff
+];
+
+// 星エフェクトは1個ではなく24個のパーティクルで華やかに演出する
+const starParticles = [];
+const starParticleCount = 24;
+
+for (let i = 0; i < starParticleCount; i++) {
+
+    const size = 0.18 + Math.random() * 0.22;
+    const shape = createSparkleStarShape(size, size * 0.38);
+
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+        depth: size * 0.25,
+        bevelEnabled: true,
+        bevelThickness: size * 0.08,
+        bevelSize: size * 0.05,
+        bevelSegments: 1
+    });
+
+    const material = new THREE.MeshBasicMaterial({
+        color: sparkleColors[
+            Math.floor(Math.random() * sparkleColors.length)
+        ],
+        transparent: true,
+        opacity: 1
+    });
+
+    const starMesh = new THREE.Mesh(geometry, material);
+    starMesh.visible = false;
+
+    starMesh.userData.velocity = new THREE.Vector3();
+    starMesh.userData.spin = new THREE.Vector3();
+
+    scene.add(starMesh);
+    starParticles.push(starMesh);
+}
 
 // =====================================================
 // 紙吹雪
@@ -301,6 +392,10 @@ createConfetti();
 window.addEventListener("keydown", (event) => {
 
     if (event.code !== "Enter") return;
+
+    // 長押し（キーリピート）は無効化。離してもう一度押した時だけカウントする
+    if (event.repeat) return;
+
     if (gameFinished) return;
 
     if (!gameStarted && !isCountingDown) {
@@ -391,8 +486,7 @@ function tapPower() {
     // -------------------------------------------------
     // 元気玉の大きさ
     // -------------------------------------------------
-    // 1回につき0.08ずつ大きくする
-    // 最大4.2倍まで
+    // 1回につき0.08ずつ大きくする（最大4.2倍まで）
     ballScale = Math.min(
         1 + clickCount * 0.08,
         4.2
@@ -409,10 +503,57 @@ function tapPower() {
     // -------------------------------------------------
     // 少ない連打でも光が強くなる
     ballMaterial.emissiveIntensity = Math.min(
-        2 + clickCount * 0.08,
-        6
+        2 + clickCount * 0.12,
+        7
     );
+
+    updateBallColor();
 }
+
+// =====================================================
+// 元気玉の色（連打数に応じて 黄→橙→赤→虹色）
+// =====================================================
+function updateBallColor() {
+
+    const thresholds = [12, 24, 36];
+    const colors = [
+        0xffee00, // 黄色
+        0xff8c00, // オレンジ
+        0xff0000  // 赤
+    ];
+
+    let color;
+
+    let stage = thresholds.findIndex(limit => clickCount <= limit);
+
+    if (stage === -1) {
+
+        const rainbowColors = [
+            0xff0000,
+            0xff8800,
+            0xffff00,
+            0x00ff66,
+            0x3388ff,
+            0xaa33ff
+        ];
+
+        const index =
+            Math.floor(performance.now() / 90) % rainbowColors.length;
+
+        color = new THREE.Color(rainbowColors[index]);
+
+    } else {
+
+        color = new THREE.Color(colors[stage]);
+    }
+
+    ballMaterial.color.copy(color);
+    ballMaterial.emissive.copy(color);
+
+    // 玉の色に合わせて周囲の発光ライトも変化させる
+    ballGlowLight.color.copy(color);
+}
+
 // =====================================================
 // TIME UP
 // =====================================================
@@ -432,14 +573,20 @@ function finishGame() {
 // 元気玉発射
 // =====================================================
 
-function updateLaunch() {
+// 1秒あたりの移動量（60fps基準の値 * 60）
+const LAUNCH_SPEED_Y = 0.025 * FPS_BASE;
+const LAUNCH_SPEED_Z = 0.18 * FPS_BASE;
+
+function updateLaunch(deltaSeconds) {
 
     // 発射中でなければ何もしない
     if (!isLaunching) return;
 
     // 元気玉を敵に向かって飛ばす
-    spiritBall.position.y += 0.025;
-    spiritBall.position.z -= 0.18;
+    spiritBall.position.y += LAUNCH_SPEED_Y * deltaSeconds;
+    spiritBall.position.z -= LAUNCH_SPEED_Z * deltaSeconds;
+
+    ballGlowLight.position.copy(spiritBall.position);
 
     // 敵に命中したか確認
     if (spiritBall.position.z <= boss.position.z + 1) {
@@ -462,7 +609,13 @@ function updateLaunch() {
 let explosionStarted = false;
 let explosionStartTime = 0;
 
-function updateExplosion() {
+const EXPLOSION_SCALE_GROWTH = 1.18;
+const EXPLOSION_OPACITY_FADE = 0.08 * FPS_BASE;
+const PARTICLE_VELOCITY_DAMP = 0.96;
+const PARTICLE_SCALE_SHRINK = 0.97;
+const PARTICLE_OPACITY_FADE = 0.018 * FPS_BASE;
+
+function updateExplosion(deltaSeconds) {
 
     if (!isExplosion) return;
 
@@ -497,16 +650,25 @@ function updateExplosion() {
         isShake = true;
     }
 
-    explosion.scale.multiplyScalar(1.18);
-    explosionMaterial.opacity -= 0.08;
+    explosion.scale.multiplyScalar(
+        decayPerSecond(EXPLOSION_SCALE_GROWTH, deltaSeconds)
+    );
+    explosionMaterial.opacity -= EXPLOSION_OPACITY_FADE * deltaSeconds;
 
     for (const particle of explosionParticles) {
 
-        particle.position.add(particle.userData.velocity);
-        particle.userData.velocity.multiplyScalar(0.96);
+        particle.position.addScaledVector(
+            particle.userData.velocity,
+            FPS_BASE * deltaSeconds
+        );
+        particle.userData.velocity.multiplyScalar(
+            decayPerSecond(PARTICLE_VELOCITY_DAMP, deltaSeconds)
+        );
 
-        particle.scale.multiplyScalar(0.97);
-        particle.material.opacity -= 0.018;
+        particle.scale.multiplyScalar(
+            decayPerSecond(PARTICLE_SCALE_SHRINK, deltaSeconds)
+        );
+        particle.material.opacity -= PARTICLE_OPACITY_FADE * deltaSeconds;
     }
 
     if (performance.now() - explosionStartTime > 1000) {
@@ -653,13 +815,13 @@ function startBossFly() {
 // くるくる回転しながら、斜め上・奥へ飛ぶ
 // =====================================================
 
-function updateBossFly() {
+function updateBossFly(deltaSeconds) {
 
     // 吹っ飛び中でなければ何もしない
     if (!bossFlying) return;
 
-    // アニメーションを進める
-    bossFlyProgress += 0.012;
+    // アニメーションを進める（フレームレートに依存しない速度で）
+    bossFlyProgress += BOSS_FLY_SPEED * deltaSeconds;
 
     // 0〜1の範囲に収める
     const progress = Math.min(
@@ -693,8 +855,9 @@ function updateBossFly() {
     // -------------------------------------------------
     // くるくる回転
     // -------------------------------------------------
-     // モンスター画像を上下反転しながら回す
-       boss.material.rotation = progress * Math.PI * 8;
+    // モンスター画像を上下反転しながら回す
+    boss.material.rotation = progress * Math.PI * 8;
+
     // -------------------------------------------------
     // 奥へ行くほど小さくする
     // -------------------------------------------------
@@ -725,27 +888,55 @@ function updateBossFly() {
         console.log("ラスボス吹っ飛び終了！");
     }
 }
+
 // =====================================================
-// 星キラーン
+// 星キラーン（24個のキラキラが飛び散ってフェードアウト）
 // =====================================================
 let starStarted = false;
 let starStartTime = 0;
 const starDuration = 900;
 
+const STAR_VELOCITY_DAMP = 0.97;
+const STAR_SCALE_GROWTH = 1.01;
+const STAR_OPACITY_FADE = 0.012 * FPS_BASE;
+
 function startStarEffect() {
 
     showStar = true;
 
-    star.position.copy(boss.position);
-    star.scale.set(1, 1, 1);
-    star.visible = true;
+    for (const starMesh of starParticles) {
+
+        starMesh.position.copy(boss.position);
+        starMesh.scale.set(1, 1, 1);
+        starMesh.visible = true;
+        starMesh.material.opacity = 1;
+
+        starMesh.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+
+        // 24個の星がそれぞれ違う方向へ勢いよく飛び散る
+        starMesh.userData.velocity.set(
+            (Math.random() - 0.5) * 0.5,
+            0.15 + Math.random() * 0.35,
+            (Math.random() - 0.5) * 0.5
+        );
+
+        starMesh.userData.spin.set(
+            (Math.random() - 0.5) * 0.3,
+            (Math.random() - 0.5) * 0.3,
+            (Math.random() - 0.5) * 0.3
+        );
+    }
 
     boss.visible = false;
 
     console.log("星キラーン開始！");
 }
 
-function updateStar() {
+function updateStar(deltaSeconds) {
 
     if (!showStar) return;
 
@@ -754,19 +945,34 @@ function updateStar() {
         starStartTime = performance.now();
     }
 
-    star.rotation.x += 0.18;
-    star.rotation.y += 0.22;
-    star.rotation.z += 0.25;
+    for (const starMesh of starParticles) {
 
-    star.scale.x += 0.02;
-    star.scale.y += 0.02;
-    star.scale.z += 0.02;
+        starMesh.position.addScaledVector(
+            starMesh.userData.velocity,
+            FPS_BASE * deltaSeconds
+        );
+        starMesh.userData.velocity.multiplyScalar(
+            decayPerSecond(STAR_VELOCITY_DAMP, deltaSeconds)
+        );
+
+        starMesh.rotation.x += starMesh.userData.spin.x * FPS_BASE * deltaSeconds;
+        starMesh.rotation.y += starMesh.userData.spin.y * FPS_BASE * deltaSeconds;
+        starMesh.rotation.z += starMesh.userData.spin.z * FPS_BASE * deltaSeconds;
+
+        starMesh.scale.multiplyScalar(
+            decayPerSecond(STAR_SCALE_GROWTH, deltaSeconds)
+        );
+        starMesh.material.opacity -= STAR_OPACITY_FADE * deltaSeconds;
+    }
 
     if (performance.now() - starStartTime >= starDuration) {
 
         showStar = false;
-        star.visible = false;
         starStarted = false;
+
+        for (const starMesh of starParticles) {
+            starMesh.visible = false;
+        }
 
         showGameClear();
     }
@@ -814,17 +1020,17 @@ function startConfetti() {
     }
 }
 
-function updateConfetti() {
+function updateConfetti(deltaSeconds) {
 
     if (!confettiStarted) return;
 
     for (const piece of confettiPieces) {
 
-        piece.position.y -= piece.userData.fallSpeed;
+        piece.position.y -= piece.userData.fallSpeed * FPS_BASE * deltaSeconds;
 
-        piece.rotation.x += piece.userData.spinX;
-        piece.rotation.y += piece.userData.spinY;
-        piece.rotation.z += piece.userData.spinZ;
+        piece.rotation.x += piece.userData.spinX * FPS_BASE * deltaSeconds;
+        piece.rotation.y += piece.userData.spinY * FPS_BASE * deltaSeconds;
+        piece.rotation.z += piece.userData.spinZ * FPS_BASE * deltaSeconds;
 
         if (piece.position.y < -3) {
 
@@ -838,14 +1044,22 @@ function updateConfetti() {
 // =====================================================
 // 通常アニメーション
 // =====================================================
-function updateSpiritBall() {
+const BALL_SPIN_Y = 0.01 * FPS_BASE;
+const BALL_SPIN_X = 0.005 * FPS_BASE;
 
-    spiritBall.rotation.y += 0.01;
-    spiritBall.rotation.x += 0.005;
+function updateSpiritBall(deltaSeconds) {
+
+    spiritBall.rotation.y += BALL_SPIN_Y * deltaSeconds;
+    spiritBall.rotation.x += BALL_SPIN_X * deltaSeconds;
+
+    // 発光ライトは常に玉の位置に追従させる
+    if (!isLaunching) {
+        ballGlowLight.position.copy(spiritBall.position);
+    }
 }
 
 // =====================================================
-// ボスの通常飛行アニメーション
+// ボスの通常アイドルアニメーション
 // 上下にふわふわしながら、少し左右に動く
 // =====================================================
 
@@ -877,8 +1091,9 @@ function updateBossIdle() {
 
     // 左右に少し傾ける
     boss.material.rotation =
-    Math.sin(time * 2.2) * 0.08;
+        Math.sin(time * 2.2) * 0.08;
 }
+
 // =====================================================
 // Resize
 // =====================================================
@@ -894,24 +1109,37 @@ window.addEventListener("resize", () => {
 });
 
 // =====================================================
-// Animate
+// Animate（フレームレート非依存の更新ループ）
 // =====================================================
+// deltaSecondsは前フレームからの経過秒数。異常に大きい値
+// （タブが非アクティブから復帰した直後など）は上限を設けて
+// 演出が一気に飛ばないようにする。
+const MAX_DELTA_SECONDS = 1 / 15;
+
 function animate() {
 
     requestAnimationFrame(animate);
 
-    updateSpiritBall();
+    const now = performance.now();
+    let deltaSeconds = (now - lastFrameTime) / 1000;
+    lastFrameTime = now;
+
+    if (deltaSeconds > MAX_DELTA_SECONDS) {
+        deltaSeconds = MAX_DELTA_SECONDS;
+    }
+
+    updateSpiritBall(deltaSeconds);
     updateBossIdle();
-    updateLaunch();
+    updateLaunch(deltaSeconds);
 
     // 爆発
-    updateExplosion();
+    updateExplosion(deltaSeconds);
 
     updateCameraShake();
-    updateBossFly();
-    updateStar();
+    updateBossFly(deltaSeconds);
+    updateStar(deltaSeconds);
     updateGameClear();
-    updateConfetti();
+    updateConfetti(deltaSeconds);
 
     renderer.render(scene, camera);
 }
