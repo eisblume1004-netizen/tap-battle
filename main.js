@@ -342,7 +342,7 @@ if (enemyIntroProgress < 0.8) {
 
         setTimeout(() => {
 
-            showMessage(スタート！");
+            showMessage("スタート！");
 
         }, 800);
     }
