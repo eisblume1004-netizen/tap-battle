@@ -284,25 +284,24 @@ function updateEnemyIntro(deltaSeconds) {
     // 時間を進める
     enemyIntroProgress += deltaSeconds;
 
-    // -------------------------------------------------
-    // 最初の0.8秒間は文字だけ表示
-    // -------------------------------------------------
-    if (enemyIntroProgress < 0.) {
+    // 最初の0.3秒間は文字だけ表示
+    if (enemyIntroProgress < 0.3) {
         return;
     }
 
-    // 0.3秒を過ぎたら敵を表示
+    // 敵が初めて表示される瞬間
     if (!enemyBecameVisible) {
 
-    enemyBecameVisible = true;
-    boss.visible = true;
-    
-    // 敵が出始めたら文字を消す
-    hideMessage();
+        enemyBecameVisible = true;
+        boss.visible = true;
+
+        // 「敵があらわれた！」を消す
+        hideMessage();
+    }
 
     // 登場アニメーションの進み具合
     const animationTime =
-        enemyIntroProgress - 0.8;
+        enemyIntroProgress - 0.3;
 
     const progress = Math.min(
         animationTime / ENEMY_INTRO_DURATION,
@@ -346,11 +345,9 @@ function updateEnemyIntro(deltaSeconds) {
 
             showMessage("ENTERでスタート！");
 
-        }, 800);
+        }, 500);
     }
 }
-
-
 // =====================================================
 // 爆発の中心光
 // =====================================================
