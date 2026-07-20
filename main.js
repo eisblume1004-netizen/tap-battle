@@ -477,6 +477,8 @@ function startGame() {
 
 function tapPower() {
 
+    function tapPower() {
+
     // 連打数を増やす
     clickCount++;
 
@@ -486,11 +488,9 @@ function tapPower() {
     // -------------------------------------------------
     // 元気玉の大きさ
     // -------------------------------------------------
-    // 1回につき0.08ずつ大きくする（最大4.2倍まで）
-    ballScale = Math.min(
-        1 + clickCount * 0.08,
-        4.2
-    );
+
+    // 上限なしで、連打するたびに大きくする
+    ballScale = 1 + clickCount * 0.08;
 
     spiritBall.scale.set(
         ballScale,
@@ -501,15 +501,13 @@ function tapPower() {
     // -------------------------------------------------
     // 元気玉の光
     // -------------------------------------------------
-    // 少ない連打でも光が強くなる
-    ballMaterial.emissiveIntensity = Math.min(
-        2 + clickCount * 0.12,
-        7
-    );
+
+    // 光も連打数に合わせて少しずつ強くする
+    ballMaterial.emissiveIntensity =
+        2 + clickCount * 0.12;
 
     updateBallColor();
 }
-
 // =====================================================
 // 元気玉の色（連打数に応じて 黄→橙→赤→虹色）
 // =====================================================
