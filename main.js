@@ -226,9 +226,10 @@ boss.visible = false;
 let enemyIntroStarted = false;
 let enemyIntroFinished = false;
 let enemyIntroProgress = 0;
+let enemyBecameVisible = false;
 
 // 登場にかかる時間
-const ENEMY_INTRO_DURATION = 4.0;
+const ENEMY_INTRO_DURATION = 2.0;
 
 // 登場前と登場後の位置・大きさ
 const bossIntroStartPosition = new THREE.Vector3();
@@ -286,12 +287,18 @@ function updateEnemyIntro(deltaSeconds) {
     // -------------------------------------------------
     // 最初の0.8秒間は文字だけ表示
     // -------------------------------------------------
-    if (enemyIntroProgress < 0.8) {
+    if (enemyIntroProgress < 0.) {
         return;
     }
 
-    // 0.8秒を過ぎたら敵を表示
+    // 0.3秒を過ぎたら敵を表示
+    if (!enemyBecameVisible) {
+
+    enemyBecameVisible = true;
     boss.visible = true;
+    
+    // 敵が出始めたら文字を消す
+    hideMessage();
 
     // 登場アニメーションの進み具合
     const animationTime =
