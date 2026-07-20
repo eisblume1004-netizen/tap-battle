@@ -92,6 +92,16 @@ let gameFinished = false;
 let isCountingDown = false;
 let countdown = 3;
 
+// =====================================================
+// レベル・結果判定
+// =====================================================
+let selectedLevel = null;
+let targetCount = 0;
+let bossImageReady = false;
+let levelCleared = false;
+let failureResultStarted = false;
+let failureSequenceActive = false;
+
 let ballScale = 1;
 
 let lastFrameTime = performance.now();
@@ -147,6 +157,67 @@ function hideMessage() {
 }
 
 // =====================================================
+// レベル選択
+// =====================================================
+const levelSelectScreen =
+    document.getElementById("levelSelect");
+
+const levelButtons =
+    document.querySelectorAll(".levelButton");
+
+function selectLevel(level, target) {
+
+    if (selectedLevel !== null) return;
+
+    selectedLevel = level;
+    targetCount = target;
+
+    clickCount = 0;
+    countText.textContent = clickCount;
+
+    timeLeft = 20;
+    timeText.textContent = timeLeft;
+
+    if (levelSelectScreen) {
+        levelSelectScreen.style.display = "none";
+    }
+
+    console.log("選択レベル：" + selectedLevel);
+    console.log("目標連打数：" + targetCount);
+
+    if (bossImageReady) {
+        startEnemyIntro();
+    } else {
+        showMessage("よみこみ中...");
+    }
+}
+
+levelButtons.forEach((button) => {
+
+    button.addEventListener("click", () => {
+
+        const level = button.dataset.level;
+        const target = Number(button.dataset.target);
+
+        selectLevel(level, target);
+    });
+});
+
+// A・B・Cキーでもレベルを選べる
+window.addEventListener("keydown", (event) => {
+
+    if (selectedLevel !== null) return;
+
+    if (event.code === "KeyA") {
+        selectLevel("A", 10);
+    } else if (event.code === "KeyB") {
+        selectLevel("B", 25);
+    } else if (event.code === "KeyC") {
+        selectLevel("C", 40);
+    }
+});
+
+// =====================================================
 // 元気玉
 // =====================================================
 const ballGeometry = new THREE.SphereGeometry(0.15, 64, 64);
@@ -192,8 +263,14 @@ const bossTexture = bossTextureLoader.load(
         );
 
         console.log("ボス画像の比率調整完了");
-        //ボス登場演出を開始
-        startEnemyIntro();
+
+        // ボス画像の読み込み完了
+        bossImageReady = true;
+
+        // レベル選択済みなら登場演出を始める
+        if (selectedLevel !== null) {
+            startEnemyIntro();
+        }
     }
 );
 
@@ -228,8 +305,11 @@ let enemyIntroFinished = false;
 let enemyIntroProgress = 0;
 let enemyBecameVisible = false;
 
-// 登場にかかる時間
-const ENEMY_INTRO_DURATION = 2.0;
+// 「敵があらわれた！」を見せる時間
+const ENEMY_INTRO_DELAY = 0.3;
+
+// 敵が登場するアニメーション時間
+const ENEMY_INTRO_DURATION = 1.2;
 
 // 登場前と登場後の位置・大きさ
 const bossIntroStartPosition = new THREE.Vector3();
@@ -267,7 +347,7 @@ function startEnemyIntro() {
     boss.scale.copy(bossIntroStartScale);
 
     // 最初はまだ表示しない
-　　boss.visible = false;
+    boss.visible = false;
 
     showMessage("敵があらわれた！");
 }
@@ -281,58 +361,48 @@ function updateEnemyIntro(deltaSeconds) {
     if (!enemyIntroStarted) return;
     if (enemyIntroFinished) return;
 
-    // 時間を進める
     enemyIntroProgress += deltaSeconds;
 
-    // 最初の0.6秒間は文字だけ表示
-    if (enemyIntroProgress < 0.8) {
+    // 最初は「敵があらわれた！」だけ表示
+    if (enemyIntroProgress < ENEMY_INTRO_DELAY) {
         return;
     }
 
-    // 敵が初めて表示される瞬間
+    // 敵が見え始める瞬間に文字を消す
     if (!enemyBecameVisible) {
-
         enemyBecameVisible = true;
         boss.visible = true;
-
-        // 「敵があらわれた！」を消す
         hideMessage();
     }
 
-    // 登場アニメーションの進み具合
     const animationTime =
-        enemyIntroProgress - 0.3;
+        enemyIntroProgress - ENEMY_INTRO_DELAY;
 
     const progress = Math.min(
         animationTime / ENEMY_INTRO_DURATION,
         1
     );
 
-    // 最初は速く、最後はゆっくり
     const easedProgress =
         1 - Math.pow(1 - progress, 3);
 
-    // 上から通常位置へ移動
     boss.position.lerpVectors(
         bossIntroStartPosition,
         bossIntroTargetPosition,
         easedProgress
     );
 
-    // 小さい状態から通常サイズへ
     boss.scale.lerpVectors(
         bossIntroStartScale,
         bossIntroTargetScale,
         easedProgress
     );
 
-    // 登場中に少し揺らす
     boss.material.rotation =
         Math.sin(progress * Math.PI * 4) *
         (1 - progress) *
         0.25;
 
-    // 登場完了
     if (progress >= 1) {
 
         enemyIntroFinished = true;
@@ -342,9 +412,7 @@ function updateEnemyIntro(deltaSeconds) {
         boss.material.rotation = 0;
 
         setTimeout(() => {
-
-            showMessage("スタート！");
-
+            showMessage("ENTERでスタート！");
         }, 500);
     }
 }
@@ -694,11 +762,19 @@ function finishGame() {
     gameFinished = true;
     gameStarted = false;
 
+    // 目標回数を達成したか保存
+    levelCleared =
+        clickCount >= targetCount;
+
     showMessage("TIME UP!!");
 
     setTimeout(() => {
+
         hideMessage();
+
+        // 成功でも失敗でも元気玉を発射
         isLaunching = true;
+
     }, 1000);
 }
 // =====================================================
@@ -711,29 +787,101 @@ const LAUNCH_SPEED_Z = 0.18 * FPS_BASE;
 
 function updateLaunch(deltaSeconds) {
 
-    // 発射中でなければ何もしない
     if (!isLaunching) return;
 
-    // 元気玉を敵に向かって飛ばす
-    spiritBall.position.y += LAUNCH_SPEED_Y * deltaSeconds;
-    spiritBall.position.z -= LAUNCH_SPEED_Z * deltaSeconds;
+    spiritBall.position.y +=
+        LAUNCH_SPEED_Y * deltaSeconds;
 
-    ballGlowLight.position.copy(spiritBall.position);
+    spiritBall.position.z -=
+        LAUNCH_SPEED_Z * deltaSeconds;
 
-    // 敵に命中したか確認
-    if (spiritBall.position.z <= boss.position.z + 1) {
+    ballGlowLight.position.copy(
+        spiritBall.position
+    );
 
-        // 発射終了
+    if (
+        spiritBall.position.z <=
+        boss.position.z + 1
+    ) {
+
         isLaunching = false;
 
-        // 元気玉の位置を敵の手前に固定
-        spiritBall.position.z = boss.position.z + 1;
+        spiritBall.position.z =
+            boss.position.z + 1;
 
         console.log("元気玉が命中！");
 
-        // 爆発開始
-        isExplosion = true;
+        if (levelCleared) {
+
+            // 成功：爆発して敵を吹き飛ばす
+            isExplosion = true;
+
+        } else {
+
+            // 失敗：敵は倒れず、威力不足の演出へ
+            startFailureResult();
+        }
     }
+}
+
+// =====================================================
+// ゲーム失敗演出
+// =====================================================
+function startFailureResult() {
+
+    if (failureResultStarted) return;
+
+    failureResultStarted = true;
+    failureSequenceActive = true;
+
+    showMessage("威力が弱かった！");
+
+    // 命中した元気玉を少し見せてから消す
+    setTimeout(() => {
+        spiritBall.visible = false;
+    }, 450);
+
+    // 敵を左右に小さく揺らす
+    const originalX = bossBasePosition.x;
+    let shakeCount = 0;
+
+    const weakHitShake = setInterval(() => {
+
+        shakeCount++;
+
+        boss.position.x =
+            originalX +
+            (shakeCount % 2 === 0 ? 0.18 : -0.18);
+
+        if (shakeCount >= 10) {
+
+            clearInterval(weakHitShake);
+
+            boss.position.x = bossBasePosition.x;
+            boss.position.y = bossBasePosition.y;
+            boss.material.rotation = 0;
+        }
+
+    }, 55);
+
+    // 威力不足を見せたあと、ゲーム失敗を表示
+    setTimeout(() => {
+
+        const remainingCount =
+            Math.max(targetCount - clickCount, 0);
+
+        showMessage(
+            "ゲームしっぱい！ あと" +
+            remainingCount +
+            "回だった！"
+        );
+
+        console.log("ゲーム失敗");
+        console.log("選択レベル：" + selectedLevel);
+        console.log("目標回数：" + targetCount);
+        console.log("実際の回数：" + clickCount);
+
+    }, 1800);
 }
 // =====================================================
 // 爆発
@@ -1203,6 +1351,7 @@ function updateBossIdle() {
         isExplosion ||
         showStar ||
         gameClear ||
+        failureSequenceActive ||
         !boss.visible
     ) {
         return;
@@ -1261,11 +1410,14 @@ function animate() {
     }
 
     updateSpiritBall(deltaSeconds);
-    updateBossIdle();
-    updateLaunch(deltaSeconds);
 
     // ボス登場演出
     updateEnemyIntro(deltaSeconds);
+
+    // 登場後のみ通常のふわふわ動作
+    if (enemyIntroFinished) {
+        updateBossIdle();
+    }
 
     updateLaunch(deltaSeconds);
 
