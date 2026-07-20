@@ -192,6 +192,8 @@ const bossTexture = bossTextureLoader.load(
         );
 
         console.log("ボス画像の比率調整完了");
+        //ボス登場演出を開始
+        startEnemyIntro();
     }
 );
 
@@ -214,7 +216,119 @@ boss.position.set(
 // ボスが通常時に浮く基準位置
 const bossBasePosition = boss.position.clone();
 scene.add(boss);
+// 最初はボスを隠しておく
+boss.visible = false;
 
+// =====================================================
+// ボス登場演出
+// =====================================================
+
+let enemyIntroStarted = false;
+let enemyIntroFinished = false;
+let enemyIntroProgress = 0;
+
+// 登場にかかる時間
+const ENEMY_INTRO_DURATION = 1.2;
+
+// 登場前と登場後の位置・大きさ
+const bossIntroStartPosition = new THREE.Vector3();
+const bossIntroTargetPosition = new THREE.Vector3();
+const bossIntroTargetScale = new THREE.Vector3();
+const bossIntroStartScale = new THREE.Vector3(0.01, 0.01, 0.01);
+
+
+// =====================================================
+// ボス登場開始
+// =====================================================
+
+function startEnemyIntro() {
+
+    // 二重に始まらないようにする
+    if (enemyIntroStarted) return;
+
+    enemyIntroStarted = true;
+    enemyIntroProgress = 0;
+
+    // 通常時の位置と大きさを保存
+    bossIntroTargetPosition.copy(bossBasePosition);
+    bossIntroTargetScale.copy(boss.scale);
+
+    // 画面上から登場させる
+    bossIntroStartPosition.set(
+        bossBasePosition.x,
+        bossBasePosition.y + 5,
+        bossBasePosition.z
+    );
+
+    boss.position.copy(bossIntroStartPosition);
+
+    // 最初はとても小さくする
+    boss.scale.copy(bossIntroStartScale);
+
+    boss.visible = true;
+
+    showMessage("敵があらわれた！");
+}
+
+
+// =====================================================
+// ボス登場アニメーション
+// =====================================================
+
+function updateEnemyIntro(deltaSeconds) {
+
+    if (!enemyIntroStarted) return;
+    if (enemyIntroFinished) return;
+
+    // アニメーションを進める
+    enemyIntroProgress +=
+        deltaSeconds / ENEMY_INTRO_DURATION;
+
+    const progress = Math.min(
+        enemyIntroProgress,
+        1
+    );
+
+    // 最初は速く、最後はゆっくり
+    const easedProgress =
+        1 - Math.pow(1 - progress, 3);
+
+    // 上から通常位置へ移動
+    boss.position.lerpVectors(
+        bossIntroStartPosition,
+        bossIntroTargetPosition,
+        easedProgress
+    );
+
+    // 小さい状態から通常サイズへ
+    boss.scale.lerpVectors(
+        bossIntroStartScale,
+        bossIntroTargetScale,
+        easedProgress
+    );
+
+    // 登場中に少し揺らす
+    boss.material.rotation =
+        Math.sin(progress * Math.PI * 4) *
+        (1 - progress) *
+        0.25;
+
+    // 登場完了
+    if (progress >= 1) {
+
+        enemyIntroFinished = true;
+
+        boss.position.copy(bossBasePosition);
+        boss.scale.copy(bossIntroTargetScale);
+        boss.material.rotation = 0;
+
+        setTimeout(() => {
+
+            showMessage("ENTERでスタート！");
+
+        }, 800);
+    }
+}
 // =====================================================
 // 爆発の中心光
 // =====================================================
@@ -393,6 +507,8 @@ window.addEventListener("keydown", (event) => {
 
     if (event.code !== "Enter") return;
 
+    // ボスの登場演出が終わるまでは操作できない
+    if (!enemyIntroFinished) return;
     // 長押し（キーリピート）は無効化。離してもう一度押した時だけカウントする
     if (event.repeat) return;
 
@@ -1127,6 +1243,11 @@ function animate() {
 
     updateSpiritBall(deltaSeconds);
     updateBossIdle();
+    updateLaunch(deltaSeconds);
+
+    // ボス登場演出
+    updateEnemyIntro(deltaSeconds);
+
     updateLaunch(deltaSeconds);
 
     // 爆発
