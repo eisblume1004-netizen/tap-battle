@@ -343,7 +343,7 @@ function updateEnemyIntro(deltaSeconds) {
 
         setTimeout(() => {
 
-            showMessage("ENTERでスタート！");
+            showMessage("スタート！");
 
         }, 500);
     }
