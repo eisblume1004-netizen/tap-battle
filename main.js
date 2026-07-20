@@ -284,8 +284,8 @@ function updateEnemyIntro(deltaSeconds) {
     // 時間を進める
     enemyIntroProgress += deltaSeconds;
 
-    // 最初の0.3秒間は文字だけ表示
-    if (enemyIntroProgress < 0.3) {
+    // 最初の0.6秒間は文字だけ表示
+    if (enemyIntroProgress < 0.6) {
         return;
     }
 
@@ -301,7 +301,7 @@ function updateEnemyIntro(deltaSeconds) {
 
     // 登場アニメーションの進み具合
     const animationTime =
-        enemyIntroProgress - 0.3;
+        enemyIntroProgress - 0.6;
 
     const progress = Math.min(
         animationTime / ENEMY_INTRO_DURATION,
