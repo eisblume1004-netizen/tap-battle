@@ -80,3 +80,119 @@ canvas{
         transform: translate(-50%, -50%) scale(1);
     }
 }
+#levelSelect {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.68);
+}
+
+#levelSelectPanel {
+    width: min(850px, 90%);
+    padding: 35px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.96);
+    border: 6px solid #ffd447;
+    border-radius: 30px;
+    box-shadow:
+        0 0 0 6px rgba(117, 67, 0, 0.8),
+        0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+#levelSelectPanel h1 {
+    margin: 0 0 10px;
+    font-size: clamp(32px, 5vw, 60px);
+    color: #8a4c00;
+    text-shadow: 2px 2px 0 #ffd447;
+}
+
+.levelDescription {
+    margin: 0 0 25px;
+    font-size: clamp(18px, 2.5vw, 28px);
+    font-weight: bold;
+    color: #333;
+}
+
+#levelButtons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.levelButton {
+    width: 220px;
+    min-height: 210px;
+    padding: 18px;
+    cursor: pointer;
+    border: 5px solid #704000;
+    border-radius: 25px;
+    background: linear-gradient(180deg, #fff9bc, #ffca45);
+    box-shadow:
+        0 9px 0 #9b5b00,
+        0 14px 18px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.levelButton:hover {
+    transform: translateY(-5px);
+    box-shadow:
+        0 14px 0 #9b5b00,
+        0 20px 25px rgba(0, 0, 0, 0.3);
+}
+
+.levelButton:active {
+    transform: translateY(6px);
+    box-shadow: 0 3px 0 #9b5b00;
+}
+
+.levelButton span {
+    display: block;
+}
+
+.levelName {
+    font-size: clamp(55px, 8vw, 90px);
+    font-weight: bold;
+    line-height: 1;
+    color: #e66a00;
+}
+
+.levelText {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.levelTarget {
+    margin-top: 8px;
+    font-size: 21px;
+    font-weight: bold;
+    color: #b33100;
+}
+
+@media (max-width: 700px) {
+    #levelSelectPanel {
+        padding: 20px;
+    }
+
+    #levelButtons {
+        gap: 10px;
+    }
+
+    .levelButton {
+        width: 31%;
+        min-height: 165px;
+        padding: 10px 5px;
+    }
+
+    .levelText {
+        font-size: 17px;
+    }
+
+    .levelTarget {
+        font-size: 16px;
+    }
+}
