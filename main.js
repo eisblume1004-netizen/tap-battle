@@ -247,7 +247,7 @@ const bossTextureLoader = new THREE.TextureLoader();
 const BOSS_HEIGHT = 7.5;
 
 const bossTexture = bossTextureLoader.load(
-    "./images/mon1.png",
+    "./images/mon2.png",
 
     (texture) => {
 
