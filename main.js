@@ -415,7 +415,7 @@ function updateEnemyIntro(deltaSeconds) {
         boss.material.rotation = 0;
 
         setTimeout(() => {
-            showMessage("ENTERでスタート！");
+            showMessage("スタート！");
         }, 500);
     }
 }
