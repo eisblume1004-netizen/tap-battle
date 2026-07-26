@@ -368,8 +368,8 @@ for (let i = 0; i < FIRE_COUNT; i++) {
     );
 
     aura.scale.set(
-        baseScale * 2.2,
-        baseScale * 2.2,
+        baseScale * 1.5,
+        baseScale * 1.5,
         1
     );
 
