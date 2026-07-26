@@ -85,7 +85,7 @@ function decayPerSecond(perFrameFactor, deltaSeconds) {
 // Game変数
 // =====================================================
 let clickCount = 0;
-let timeLeft = 20;
+let timeLeft = 15;
 
 let gameStarted = false;
 let gameFinished = false;
