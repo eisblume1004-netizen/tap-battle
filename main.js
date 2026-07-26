@@ -96,6 +96,7 @@ let countdown = 3;
 // レベル・結果判定
 // =====================================================
 let selectedLevel = null;
+let selectedElement = null;
 let targetCount = 0;
 let bossImageReady = false;
 let levelCleared = false;
@@ -188,11 +189,8 @@ function selectLevel(level, target) {
     console.log("選択レベル：" + selectedLevel);
     console.log("目標連打数：" + targetCount);
 
-    if (bossImageReady) {
-        startEnemyIntro();
-    } else {
-        showMessage("よみこみ中...");
-    }
+    // 難易度を選んだら、次に属性選択を表示する
+    showElementSelect();
 }
 
 levelButtons.forEach((button) => {
@@ -220,6 +218,183 @@ window.addEventListener("keydown", (event) => {
     }
 });
 
+
+// =====================================================
+// 属性選択（水・雷・風）
+// HTMLを変更しなくても、このJavaScriptだけで画面を作る
+// =====================================================
+
+const elementSelectScreen = document.createElement("div");
+elementSelectScreen.id = "elementSelectScreen";
+
+elementSelectScreen.innerHTML = `
+    <div class="elementSelectPanel">
+        <div class="elementSelectTitle">属性を選択</div>
+
+        <div class="elementButtonRow">
+            <button class="elementButton waterButton" data-element="water">
+                <span class="elementIcon">💧</span>
+                <span class="elementName">水</span>
+            </button>
+
+            <button class="elementButton thunderButton" data-element="thunder">
+                <span class="elementIcon">⚡</span>
+                <span class="elementName">雷</span>
+            </button>
+
+            <button class="elementButton windButton" data-element="wind">
+                <span class="elementIcon">🌪️</span>
+                <span class="elementName">風</span>
+            </button>
+        </div>
+    </div>
+`;
+
+document.body.appendChild(elementSelectScreen);
+
+const elementStyle = document.createElement("style");
+elementStyle.textContent = `
+    #elementSelectScreen {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+        font-family: sans-serif;
+    }
+
+    .elementSelectPanel {
+        width: min(760px, 88vw);
+        padding: 28px 30px 32px;
+        border: 4px solid rgba(255, 255, 255, 0.9);
+        border-radius: 28px;
+        background: rgba(20, 24, 40, 0.9);
+        box-shadow:
+            0 0 28px rgba(255,255,255,0.35),
+            inset 0 0 24px rgba(255,255,255,0.08);
+        text-align: center;
+    }
+
+    .elementSelectTitle {
+        margin-bottom: 24px;
+        color: white;
+        font-size: clamp(28px, 5vw, 48px);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-shadow: 0 3px 8px rgba(0,0,0,0.8);
+    }
+
+    .elementButtonRow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+    }
+
+    .elementButton {
+        min-height: 170px;
+        border: 4px solid white;
+        border-radius: 24px;
+        cursor: pointer;
+        color: white;
+        font-weight: 900;
+        transition:
+            transform 0.16s ease,
+            filter 0.16s ease,
+            box-shadow 0.16s ease;
+    }
+
+    .elementButton:hover,
+    .elementButton:focus-visible {
+        transform: translateY(-8px) scale(1.04);
+        filter: brightness(1.18);
+    }
+
+    .elementIcon {
+        display: block;
+        margin-bottom: 8px;
+        font-size: clamp(54px, 8vw, 84px);
+        line-height: 1;
+    }
+
+    .elementName {
+        display: block;
+        font-size: clamp(26px, 4vw, 40px);
+    }
+
+    .waterButton {
+        background: linear-gradient(145deg, #0b6fd6, #56d9ff);
+        box-shadow: 0 0 24px rgba(65, 197, 255, 0.7);
+    }
+
+    .thunderButton {
+        color: #342500;
+        background: linear-gradient(145deg, #ffb300, #fff66a);
+        box-shadow: 0 0 24px rgba(255, 235, 55, 0.75);
+    }
+
+    .windButton {
+        color: #073d43;
+        background: linear-gradient(145deg, #dfffff, #78e9e2);
+        box-shadow: 0 0 24px rgba(180, 255, 249, 0.75);
+    }
+
+    @media (max-width: 620px) {
+        .elementButtonRow {
+            grid-template-columns: 1fr;
+        }
+
+        .elementButton {
+            min-height: 105px;
+        }
+
+        .elementIcon {
+            display: inline-block;
+            margin: 0 12px 0 0;
+            vertical-align: middle;
+        }
+
+        .elementName {
+            display: inline-block;
+            vertical-align: middle;
+        }
+    }
+`;
+
+document.head.appendChild(elementStyle);
+
+function showElementSelect() {
+    elementSelectScreen.style.display = "flex";
+}
+
+function selectElement(elementName) {
+
+    if (selectedElement !== null) return;
+
+    selectedElement = elementName;
+    elementSelectScreen.style.display = "none";
+
+    setElementAppearance();
+
+    console.log("選択属性：" + selectedElement);
+
+    if (bossImageReady) {
+        startEnemyIntro();
+    } else {
+        showMessage("よみこみ中...");
+    }
+}
+
+elementSelectScreen
+    .querySelectorAll(".elementButton")
+    .forEach((button) => {
+
+        button.addEventListener("click", () => {
+            selectElement(button.dataset.element);
+        });
+    });
+
 // =====================================================
 // 元気玉
 // =====================================================
@@ -236,6 +411,491 @@ const ballMaterial = new THREE.MeshStandardMaterial({
 const spiritBall = new THREE.Mesh(ballGeometry, ballMaterial);
 spiritBall.position.set(0, -1.0, 2);
 scene.add(spiritBall);
+
+// =====================================================
+// 元気玉の属性エフェクト
+// 水：水滴が周回
+// 雷：稲妻がランダムに発光
+// 風：3重リング＋吸い込まれる粒子
+// =====================================================
+
+const elementEffectGroup = new THREE.Group();
+scene.add(elementEffectGroup);
+
+// ------------------------------
+// 水属性：水滴
+// ------------------------------
+const waterDropGroup = new THREE.Group();
+elementEffectGroup.add(waterDropGroup);
+
+const waterDrops = [];
+
+for (let i = 0; i < 12; i++) {
+
+    const dropMaterial = new THREE.MeshBasicMaterial({
+        color: 0x72e7ff,
+        transparent: true,
+        opacity: 0.92,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+    });
+
+    const drop = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 16, 16),
+        dropMaterial
+    );
+
+    drop.scale.set(0.75, 1.55, 0.75);
+
+    waterDropGroup.add(drop);
+
+    waterDrops.push({
+        mesh: drop,
+        angle: (i / 12) * Math.PI * 2,
+        radius: 0.42 + Math.random() * 0.18,
+        speed: 1.4 + Math.random() * 0.7,
+        yOffset: (Math.random() - 0.5) * 0.35,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
+// 水の波紋リング
+const waterRings = [];
+
+for (let i = 0; i < 2; i++) {
+
+    const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(
+            0.42 + i * 0.12,
+            0.018,
+            12,
+            64
+        ),
+        new THREE.MeshBasicMaterial({
+            color: 0xaaf5ff,
+            transparent: true,
+            opacity: 0.58,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        })
+    );
+
+    ring.rotation.x = Math.PI / 2;
+    waterDropGroup.add(ring);
+    waterRings.push(ring);
+}
+
+// ------------------------------
+// 雷属性：稲妻
+// ------------------------------
+const thunderGroup = new THREE.Group();
+elementEffectGroup.add(thunderGroup);
+
+const thunderBolts = [];
+
+function createLightningBolt() {
+
+    const points = [];
+    const segmentCount = 6;
+
+    for (let i = 0; i <= segmentCount; i++) {
+
+        const progress = i / segmentCount;
+
+        points.push(
+            new THREE.Vector3(
+                (Math.random() - 0.5) * 0.18,
+                progress * 0.75 - 0.375,
+                (Math.random() - 0.5) * 0.12
+            )
+        );
+    }
+
+    const geometry =
+        new THREE.BufferGeometry().setFromPoints(points);
+
+    const material =
+        new THREE.LineBasicMaterial({
+            color: 0xffff7a,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        });
+
+    const bolt = new THREE.Line(
+        geometry,
+        material
+    );
+
+    thunderGroup.add(bolt);
+
+    thunderBolts.push({
+        line: bolt,
+        angle: Math.random() * Math.PI * 2,
+        radius: 0.35 + Math.random() * 0.28,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
+for (let i = 0; i < 9; i++) {
+    createLightningBolt();
+}
+
+// 雷の外周リング
+const thunderRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.53, 0.025, 10, 72),
+    new THREE.MeshBasicMaterial({
+        color: 0xffff99,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+    })
+);
+
+thunderRing.rotation.x = Math.PI / 2;
+thunderGroup.add(thunderRing);
+
+// ------------------------------
+// 風属性：高速3重リング＋渦粒子
+// ------------------------------
+const windGroup = new THREE.Group();
+elementEffectGroup.add(windGroup);
+
+const windRings = [];
+
+for (let i = 0; i < 3; i++) {
+
+    const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(
+            0.38 + i * 0.11,
+            0.022 + i * 0.004,
+            14,
+            96
+        ),
+        new THREE.MeshBasicMaterial({
+            color:
+                i === 0
+                    ? 0xeaffff
+                    : 0x8df6ff,
+            transparent: true,
+            opacity: 0.72 - i * 0.1,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        })
+    );
+
+    if (i === 0) {
+        ring.rotation.set(
+            Math.PI / 2,
+            0,
+            0.25
+        );
+    } else if (i === 1) {
+        ring.rotation.set(
+            0.65,
+            Math.PI / 2,
+            -0.35
+        );
+    } else {
+        ring.rotation.set(
+            -0.75,
+            0.55,
+            Math.PI / 2
+        );
+    }
+
+    windGroup.add(ring);
+    windRings.push(ring);
+}
+
+const windParticles = [];
+
+for (let i = 0; i < 34; i++) {
+
+    const particle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.025, 10, 10),
+        new THREE.MeshBasicMaterial({
+            color: 0xeaffff,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        })
+    );
+
+    windGroup.add(particle);
+
+    windParticles.push({
+        mesh: particle,
+        angle: Math.random() * Math.PI * 2,
+        radius: 0.45 + Math.random() * 0.9,
+        speed: 2.2 + Math.random() * 2.4,
+        height: (Math.random() - 0.5) * 0.85,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
+// 属性ごとの色・表示を切り替える
+function setElementAppearance() {
+
+    waterDropGroup.visible =
+        selectedElement === "water";
+
+    thunderGroup.visible =
+        selectedElement === "thunder";
+
+    windGroup.visible =
+        selectedElement === "wind";
+
+    updateBallColor();
+}
+
+// 最初は全部隠す
+waterDropGroup.visible = false;
+thunderGroup.visible = false;
+windGroup.visible = false;
+
+function updateElementEffects(deltaSeconds) {
+
+    if (selectedElement === null) {
+        elementEffectGroup.visible = false;
+        return;
+    }
+
+    elementEffectGroup.visible =
+        spiritBall.visible;
+
+    elementEffectGroup.position.copy(
+        spiritBall.position
+    );
+
+    // 元気玉と一緒に少しずつ大きくする
+    const effectScale =
+        Math.max(1, ballScale * 0.64);
+
+    elementEffectGroup.scale.setScalar(
+        effectScale
+    );
+
+    const time =
+        performance.now() * 0.001;
+
+    // --------------------------
+    // 水
+    // --------------------------
+    if (selectedElement === "water") {
+
+        waterDrops.forEach((dropData) => {
+
+            dropData.angle +=
+                dropData.speed *
+                deltaSeconds;
+
+            const radius =
+                dropData.radius +
+                Math.sin(
+                    time * 2.5 +
+                    dropData.phase
+                ) *
+                0.055;
+
+            dropData.mesh.position.set(
+                Math.cos(dropData.angle) *
+                    radius,
+                dropData.yOffset +
+                    Math.sin(
+                        time * 3 +
+                        dropData.phase
+                    ) *
+                    0.13,
+                Math.sin(dropData.angle) *
+                    radius
+            );
+
+            dropData.mesh.rotation.z =
+                -dropData.angle;
+        });
+
+        waterRings[0].rotation.z +=
+            1.6 *
+            deltaSeconds;
+
+        waterRings[1].rotation.z -=
+            1.05 *
+            deltaSeconds;
+
+        waterRings.forEach((ring, index) => {
+
+            const pulse =
+                1 +
+                Math.sin(
+                    time * 3.5 +
+                    index
+                ) *
+                0.08;
+
+            ring.scale.setScalar(pulse);
+        });
+    }
+
+    // --------------------------
+    // 雷
+    // --------------------------
+    if (selectedElement === "thunder") {
+
+        thunderRing.rotation.z +=
+            4.5 *
+            deltaSeconds;
+
+        thunderBolts.forEach(
+            (boltData, index) => {
+
+                const angle =
+                    boltData.angle +
+                    time *
+                    (
+                        index % 2 === 0
+                            ? 1.8
+                            : -1.5
+                    );
+
+                boltData.line.position.set(
+                    Math.cos(angle) *
+                        boltData.radius,
+                    Math.sin(
+                        time * 4 +
+                        boltData.phase
+                    ) *
+                        0.24,
+                    Math.sin(angle) *
+                        boltData.radius
+                );
+
+                boltData.line.rotation.z =
+                    -angle +
+                    Math.PI / 2;
+
+                // バチバチ点滅
+                const flash =
+                    Math.sin(
+                        time * 18 +
+                        boltData.phase
+                    );
+
+                boltData.line.visible =
+                    flash > -0.2 ||
+                    Math.random() > 0.83;
+
+                boltData.line.material.opacity =
+                    0.5 +
+                    Math.random() * 0.5;
+            }
+        );
+
+        // 雷属性は元気玉自体も細かく脈打つ
+        const thunderPulse =
+            1 +
+            Math.sin(time * 22) *
+            0.045;
+
+        spiritBall.scale.multiplyScalar(
+            thunderPulse
+        );
+    }
+
+    // --------------------------
+    // 風
+    // --------------------------
+    if (selectedElement === "wind") {
+
+        windRings[0].rotation.z +=
+            5.6 *
+            deltaSeconds;
+
+        windRings[1].rotation.x -=
+            4.7 *
+            deltaSeconds;
+
+        windRings[1].rotation.y +=
+            3.3 *
+            deltaSeconds;
+
+        windRings[2].rotation.y -=
+            5.2 *
+            deltaSeconds;
+
+        windRings[2].rotation.z +=
+            3.9 *
+            deltaSeconds;
+
+        windParticles.forEach(
+            (particleData) => {
+
+                particleData.angle +=
+                    particleData.speed *
+                    deltaSeconds;
+
+                // 外側から中心へ吸い込まれ、
+                // 中心に着いたら再び外側へ戻る
+                particleData.radius -=
+                    0.36 *
+                    deltaSeconds;
+
+                if (
+                    particleData.radius <
+                    0.16
+                ) {
+                    particleData.radius =
+                        0.75 +
+                        Math.random() *
+                        0.65;
+
+                    particleData.height =
+                        (Math.random() -
+                            0.5) *
+                        0.9;
+                }
+
+                const spiralRadius =
+                    particleData.radius;
+
+                particleData.mesh.position.set(
+                    Math.cos(
+                        particleData.angle
+                    ) *
+                        spiralRadius,
+                    particleData.height *
+                        (
+                            particleData.radius /
+                            1.35
+                        ) +
+                        Math.sin(
+                            time * 5 +
+                            particleData.phase
+                        ) *
+                        0.07,
+                    Math.sin(
+                        particleData.angle
+                    ) *
+                        spiralRadius
+                );
+
+                const particleScale =
+                    THREE.MathUtils.clamp(
+                        particleData.radius,
+                        0.25,
+                        1
+                    );
+
+                particleData.mesh.scale.setScalar(
+                    particleScale
+                );
+            }
+        );
+    }
+}
 
 // =====================================================
 // ラスボス画像
@@ -271,7 +931,10 @@ const bossTexture = bossTextureLoader.load(
         bossImageReady = true;
 
         // レベル選択済みなら登場演出を始める
-        if (selectedLevel !== null) {
+        if (
+            selectedLevel !== null &&
+            selectedElement !== null
+        ) {
             startEnemyIntro();
         }
     }
@@ -359,7 +1022,7 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
     // 以前の約2倍。画面上でしっかり存在感が出る大きさ
     const baseScale =
-        5.0 + Math.random() * 2.0;
+        3.0 + Math.random() * 1.2;
 
     fire.scale.set(
         baseScale,
@@ -368,8 +1031,8 @@ for (let i = 0; i < FIRE_COUNT; i++) {
     );
 
     aura.scale.set(
-        baseScale * 1.5,
-        baseScale * 1.5,
+        baseScale * 1.7,
+        baseScale * 1.7,
         1
     );
 
@@ -399,13 +1062,13 @@ for (let i = 0; i < FIRE_COUNT; i++) {
         radius:
             4.2 +
             Math.random() *
-            5.5,
+            3.8,
 
         // ボスを基準にした高さ
         height:
             1.4 +
             Math.random() *
-            6.2,
+            4.8,
 
         // 上下運動のタイミングをずらす
         floatOffset:
@@ -448,6 +1111,9 @@ const bossIntroStartScale = new THREE.Vector3(0.01, 0.01, 0.01);
 // =====================================================
 
 function startEnemyIntro() {
+
+    // 選択した属性の元気玉とエフェクトを反映
+    setElementAppearance();
 
     // 二重に始まらないようにする
     if (enemyIntroStarted) return;
@@ -719,7 +1385,8 @@ window.addEventListener("keydown", (event) => {
 
     if (event.code !== "Enter") return;
 
-    // ボスの登場演出が終わるまでは操作できない
+    // 属性選択とボス登場が終わるまでは操作できない
+    if (selectedElement === null) return;
     if (!enemyIntroFinished) return;
     // 長押し（キーリピート）は無効化。離してもう一度押した時だけカウントする
     if (event.repeat) return;
@@ -840,42 +1507,78 @@ function tapPower() {
 // =====================================================
 function updateBallColor() {
 
-    const thresholds = [12, 24, 36];
-    const colors = [
-        0xffee00, // 黄色
-        0xff8c00, // オレンジ
-        0xff0000  // 赤
-    ];
+    // 属性未選択時だけ従来の黄色
+    if (selectedElement === null) {
 
-    let color;
+        const defaultColor =
+            new THREE.Color(0xffee00);
 
-    let stage = thresholds.findIndex(limit => clickCount <= limit);
+        ballMaterial.color.copy(
+            defaultColor
+        );
 
-    if (stage === -1) {
+        ballMaterial.emissive.copy(
+            defaultColor
+        );
 
-        const rainbowColors = [
-            0xff0000,
-            0xff8800,
-            0xffff00,
-            0x00ff66,
-            0x3388ff,
-            0xaa33ff
-        ];
+        ballGlowLight.color.copy(
+            defaultColor
+        );
 
-        const index =
-            Math.floor(performance.now() / 90) % rainbowColors.length;
-
-        color = new THREE.Color(rainbowColors[index]);
-
-    } else {
-
-        color = new THREE.Color(colors[stage]);
+        return;
     }
+
+    // 連打数に合わせて、同じ属性の中で明るさを上げる
+    let stage = 0;
+
+    if (clickCount >= 36) {
+        stage = 3;
+    } else if (clickCount >= 24) {
+        stage = 2;
+    } else if (clickCount >= 12) {
+        stage = 1;
+    }
+
+    const elementColors = {
+
+        water: [
+            0x239dff,
+            0x35c8ff,
+            0x72e7ff,
+            0xd6fbff
+        ],
+
+        thunder: [
+            0xffc400,
+            0xffe600,
+            0xffff73,
+            0xffffff
+        ],
+
+        wind: [
+            0x59d8dc,
+            0x82f2ed,
+            0xc5ffff,
+            0xffffff
+        ]
+    };
+
+    const color =
+        new THREE.Color(
+            elementColors[
+                selectedElement
+            ][stage]
+        );
 
     ballMaterial.color.copy(color);
     ballMaterial.emissive.copy(color);
 
-    // 玉の色に合わせて周囲の発光ライトも変化させる
+    // 連打が増えるほど属性球自体も強く発光
+    ballMaterial.emissiveIntensity =
+        2.4 +
+        clickCount *
+        0.13;
+
     ballGlowLight.color.copy(color);
 }
 
@@ -1670,8 +2373,8 @@ function updateFireBalls(deltaSeconds) {
                 );
 
                 aura.scale.set(
-                    attackScale * 1.9,
-                    attackScale * 1.9,
+                    attackScale * 1.5,
+                    attackScale * 1.5,
                     1
                 );
 
@@ -1915,6 +2618,7 @@ function animate() {
     }
 
     updateSpiritBall(deltaSeconds);
+    updateElementEffects(deltaSeconds);
 
     // ボス登場演出
     updateEnemyIntro(deltaSeconds);
