@@ -234,17 +234,17 @@ elementSelectScreen.innerHTML = `
         <div class="elementButtonRow">
             <button class="elementButton waterButton" data-element="water">
                 <span class="elementIcon">💧</span>
-                <span class="elementName">水</span>
+                <span class="elementName">みず</span>
             </button>
 
             <button class="elementButton thunderButton" data-element="thunder">
                 <span class="elementIcon">⚡</span>
-                <span class="elementName">雷</span>
+                <span class="elementName">かみなり</span>
             </button>
 
             <button class="elementButton windButton" data-element="wind">
                 <span class="elementIcon">🌪️</span>
-                <span class="elementName">風</span>
+                <span class="elementName">かぜ</span>
             </button>
         </div>
     </div>
