@@ -338,13 +338,28 @@ for (let i = 0; i < FIRE_COUNT; i++) {
         map: fireTexture,
         transparent: true,
         depthWrite: false,
-        opacity: 1
+        opacity: 1,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
     });
 
     const fire = new THREE.Sprite(fireMaterial);
 
+    // 外側に重ねる薄い炎。二重表示にして派手さと発光感を出す
+    const auraMaterial = new THREE.SpriteMaterial({
+        map: fireTexture,
+        transparent: true,
+        depthWrite: false,
+        opacity: 0.38,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+    });
+
+    const aura = new THREE.Sprite(auraMaterial);
+
+    // 以前の約2倍。画面上でしっかり存在感が出る大きさ
     const baseScale =
-        0.65 + Math.random() * 0.25;
+        1.35 + Math.random() * 0.55;
 
     fire.scale.set(
         baseScale,
@@ -352,12 +367,21 @@ for (let i = 0; i < FIRE_COUNT; i++) {
         1
     );
 
-    fire.visible = false;
+    aura.scale.set(
+        baseScale * 1.45,
+        baseScale * 1.45,
+        1
+    );
 
+    fire.visible = false;
+    aura.visible = false;
+
+    scene.add(aura);
     scene.add(fire);
 
     fireBalls.push({
         sprite: fire,
+        aura: aura,
 
         // 初期角度
         angle:
@@ -373,15 +397,15 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
         // ボスからの距離
         radius:
-            1.25 +
+            2.15 +
             Math.random() *
-            0.55,
+            1.15,
 
         // ボスを基準にした高さ
         height:
-            1.7 +
+            2.05 +
             Math.random() *
-            1.3,
+            2.0,
 
         // 上下運動のタイミングをずらす
         floatOffset:
@@ -450,7 +474,7 @@ function startEnemyIntro() {
     // 最初はまだ表示しない
     boss.visible = false;
 
-    showMessage("てきがあらわれた！");
+    showMessage("敵があらわれた！");
 }
 
 
@@ -1532,6 +1556,7 @@ function updateFireBalls(deltaSeconds) {
 
         for (const fireBall of fireBalls) {
             fireBall.sprite.visible = false;
+            fireBall.aura.visible = false;
         }
 
         return;
@@ -1564,7 +1589,11 @@ function updateFireBalls(deltaSeconds) {
             const fire =
                 fireBall.sprite;
 
+            const aura =
+                fireBall.aura;
+
             fire.visible = true;
+            aura.visible = true;
 
             fireBall.angle +=
                 fireBall.speed *
@@ -1577,7 +1606,7 @@ function updateFireBalls(deltaSeconds) {
                     time * 1.8 +
                     fireBall.floatOffset
                 ) *
-                0.12;
+                0.24;
 
             let x =
                 boss.position.x +
@@ -1593,14 +1622,14 @@ function updateFireBalls(deltaSeconds) {
                     time * 2.8 +
                     fireBall.floatOffset
                 ) *
-                0.2;
+                0.38;
 
             let z =
                 boss.position.z +
                 Math.sin(
                     fireBall.angle
                 ) *
-                0.45;
+                0.8;
 
             // 選ばれた1個だけ、カメラ側へ飛び出して戻る
             if (index === fireAttackIndex) {
@@ -1623,22 +1652,31 @@ function updateFireBalls(deltaSeconds) {
 
                 z +=
                     attackAmount *
-                    3.2;
+                    4.8;
 
                 y +=
                     attackAmount *
-                    0.35;
+                    0.6;
 
                 const attackScale =
                     fireBall.baseScale +
                     attackAmount *
-                    0.35;
+                    1.25;
 
                 fire.scale.set(
                     attackScale,
                     attackScale,
                     1
                 );
+
+                aura.scale.set(
+                    attackScale * 1.65,
+                    attackScale * 1.65,
+                    1
+                );
+
+                aura.material.opacity =
+                    0.38 + attackAmount * 0.32;
 
                 if (progress >= 1) {
 
@@ -1658,16 +1696,44 @@ function updateFireBalls(deltaSeconds) {
                 const pulseScale =
                     fireBall.baseScale +
                     Math.sin(
-                        time * 4 +
+                        time * 4.8 +
                         fireBall.floatOffset
                     ) *
-                    0.05;
+                    0.16;
 
                 fire.scale.set(
                     pulseScale,
                     pulseScale,
                     1
                 );
+
+                const auraPulse =
+                    pulseScale *
+                    (
+                        1.42 +
+                        Math.sin(
+                            time * 3.2 +
+                            fireBall.floatOffset
+                        ) *
+                        0.08
+                    );
+
+                aura.scale.set(
+                    auraPulse,
+                    auraPulse,
+                    1
+                );
+
+                aura.material.opacity =
+                    0.30 +
+                    (
+                        Math.sin(
+                            time * 4 +
+                            fireBall.floatOffset
+                        ) +
+                        1
+                    ) *
+                    0.08;
             }
 
             fire.position.set(
@@ -1676,13 +1742,27 @@ function updateFireBalls(deltaSeconds) {
                 z
             );
 
+            aura.position.set(
+                x,
+                y,
+                z - 0.03
+            );
+
             // 炎そのものが左右に揺れているように見せる
             fire.material.rotation =
                 Math.sin(
-                    time * 2.5 +
+                    time * 3.2 +
                     fireBall.floatOffset
                 ) *
-                0.12;
+                0.18;
+
+            // 外側の炎は逆方向へ少し大きく揺らす
+            aura.material.rotation =
+                -Math.sin(
+                    time * 2.6 +
+                    fireBall.floatOffset
+                ) *
+                0.24;
         }
     );
 }
@@ -1706,8 +1786,14 @@ function startFireBallDefeat() {
         const fire =
             fireBall.sprite;
 
+        const aura =
+            fireBall.aura;
+
         fire.visible = true;
+        aura.visible = true;
+
         fire.material.opacity = 1;
+        aura.material.opacity = 0.5;
 
         // それぞれ違う方向へ勢いよく飛び散る
         fireBall.defeatVelocity.set(
@@ -1728,6 +1814,9 @@ function updateDefeatedFireBalls(
         const fire =
             fireBall.sprite;
 
+        const aura =
+            fireBall.aura;
+
         if (!fire.visible) continue;
 
         fire.position.addScaledVector(
@@ -1735,25 +1824,37 @@ function updateDefeatedFireBalls(
             deltaSeconds
         );
 
+        aura.position.copy(fire.position);
+
         // 重力のように少しずつ下へ落とす
         fireBall.defeatVelocity.y -=
             2.5 *
             deltaSeconds;
 
         fire.material.rotation +=
-            3 *
+            4.5 *
             deltaSeconds;
 
-        fire.scale.multiplyScalar(
+        aura.material.rotation -=
+            3.5 *
+            deltaSeconds;
+
+        const shrink =
             Math.pow(
                 0.95,
                 deltaSeconds *
                 FPS_BASE
-            )
-        );
+            );
+
+        fire.scale.multiplyScalar(shrink);
+        aura.scale.multiplyScalar(shrink);
 
         fire.material.opacity -=
             1.4 *
+            deltaSeconds;
+
+        aura.material.opacity -=
+            0.9 *
             deltaSeconds;
 
         if (
@@ -1762,6 +1863,7 @@ function updateDefeatedFireBalls(
         ) {
 
             fire.visible = false;
+            aura.visible = false;
         }
     }
 }
