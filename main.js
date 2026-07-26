@@ -359,7 +359,7 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
     // 以前の約2倍。画面上でしっかり存在感が出る大きさ
     const baseScale =
-        1.35 + Math.random() * 0.55;
+        2.6 + Math.random() * 1.2;
 
     fire.scale.set(
         baseScale,
@@ -368,8 +368,8 @@ for (let i = 0; i < FIRE_COUNT; i++) {
     );
 
     aura.scale.set(
-        baseScale * 1.45,
-        baseScale * 1.45,
+        baseScale * 1.7,
+        baseScale * 1.7,
         1
     );
 
@@ -397,15 +397,15 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
         // ボスからの距離
         radius:
-            2.15 +
+            4.2 +
             Math.random() *
-            1.15,
+            3.8,
 
         // ボスを基準にした高さ
         height:
-            2.05 +
+            1.4 +
             Math.random() *
-            2.0,
+            4.8,
 
         // 上下運動のタイミングをずらす
         floatOffset:
@@ -474,7 +474,7 @@ function startEnemyIntro() {
     // 最初はまだ表示しない
     boss.visible = false;
 
-    showMessage("敵があらわれた！");
+    showMessage("てきがあらわれた！");
 }
 
 
@@ -1629,7 +1629,7 @@ function updateFireBalls(deltaSeconds) {
                 Math.sin(
                     fireBall.angle
                 ) *
-                0.8;
+                2.2;
 
             // 選ばれた1個だけ、カメラ側へ飛び出して戻る
             if (index === fireAttackIndex) {
@@ -1661,7 +1661,7 @@ function updateFireBalls(deltaSeconds) {
                 const attackScale =
                     fireBall.baseScale +
                     attackAmount *
-                    1.25;
+                    2.8;
 
                 fire.scale.set(
                     attackScale,
@@ -1670,8 +1670,8 @@ function updateFireBalls(deltaSeconds) {
                 );
 
                 aura.scale.set(
-                    attackScale * 1.65,
-                    attackScale * 1.65,
+                    attackScale * 1.9,
+                    attackScale * 1.9,
                     1
                 );
 
@@ -1699,7 +1699,7 @@ function updateFireBalls(deltaSeconds) {
                         time * 4.8 +
                         fireBall.floatOffset
                     ) *
-                    0.16;
+                    0.32;
 
                 fire.scale.set(
                     pulseScale,
@@ -1735,6 +1735,17 @@ function updateFireBalls(deltaSeconds) {
                     ) *
                     0.08;
             }
+
+            // 奥にある火の玉は少し小さく、手前は大きくして遠近感を出す
+            const depthScale =
+                THREE.MathUtils.clamp(
+                    1.15 - (z - boss.position.z) * 0.08,
+                    0.72,
+                    1.45
+                );
+
+            fire.scale.multiplyScalar(depthScale);
+            aura.scale.multiplyScalar(depthScale);
 
             fire.position.set(
                 x,
