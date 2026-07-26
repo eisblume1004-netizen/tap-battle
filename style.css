@@ -1,54 +1,158 @@
-body{
-    margin:0;
-    overflow:hidden;
-    font-family:sans-serif;
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: sans-serif;
 
-    background-color:#000;
+    background-color: #000;
 
-    width:100vw;
-    height:100vh;
+    width: 100vw;
+    height: 100vh;
 }
 
-canvas{
-    display:block;
+canvas {
+    display: block;
 }
 
-/* 左上のUI（残り時間・連打数） */
+/* =====================================================
+   元気玉の下に表示する
+   残り時間・連打数
+===================================================== */
 
-#info{
+#info {
+    position: fixed;
 
-    position:absolute;
+    left: 50%;
+    bottom: 30px;
 
-    top:20px;
-    left:20px;
+    transform: translateX(-50%);
 
-    color:white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    font-size:32px;
-    font-weight:bold;
+    gap: 28px;
 
-    text-shadow:2px 2px 5px black;
+    min-width: 340px;
+    padding: 12px 30px;
 
-    z-index:100;
+    color: white;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(35, 48, 80, 0.93),
+            rgba(5, 10, 25, 0.93)
+        );
+
+    border: 4px solid #ffe066;
+    border-radius: 24px;
+
+    box-shadow:
+        0 0 0 4px rgba(92, 45, 0, 0.85),
+        0 0 20px rgba(255, 224, 102, 0.8),
+        0 10px 25px rgba(0, 0, 0, 0.55);
+
+    z-index: 150;
+
+    pointer-events: none;
 }
 
-/* 中央メッセージ（カウントダウン／START／TIME UP／GAME CLEAR） */
+.infoItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    min-width: 120px;
+}
+
+.infoLabel {
+    margin-bottom: 1px;
+
+    color: #fff3a3;
+
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: 2px;
+
+    text-shadow:
+        2px 2px 0 #6c3500,
+        0 0 8px rgba(255, 210, 50, 0.8);
+}
+
+.infoValue {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+
+    line-height: 1;
+}
+
+#time,
+#count {
+    color: #ffffff;
+
+    font-size: clamp(42px, 5vw, 67px);
+    font-weight: 900;
+
+    -webkit-text-stroke: 2px #6d3300;
+
+    text-shadow:
+        0 0 8px #fff59d,
+        0 0 17px #ffb300,
+        3px 3px 0 #6d3300;
+}
+
+.infoUnit {
+    margin-left: 5px;
+
+    color: #ffe066;
+
+    font-size: 25px;
+    font-weight: 900;
+
+    text-shadow:
+        2px 2px 0 #6d3300;
+}
+
+.infoDivider {
+    width: 3px;
+    height: 60px;
+
+    background:
+        linear-gradient(
+            transparent,
+            #ffe066,
+            transparent
+        );
+
+    box-shadow:
+        0 0 8px #ffb300;
+}
+
+/* =====================================================
+   中央メッセージ
+   READY・START・TIME UP・GAME CLEARなど
+===================================================== */
 
 #message {
     position: fixed;
+
     left: 50%;
     top: 50%;
+
     transform: translate(-50%, -50%);
 
     color: #ffe066;
+
     font-family: sans-serif;
     font-size: clamp(48px, 9vw, 120px);
     font-weight: 900;
+
     letter-spacing: 2px;
-    white-space: nowrap;
+    white-space: pre-line;
+    text-align: center;
 
     -webkit-text-stroke: 3px #7a3b00;
-    text-stroke: 3px #7a3b00;
 
     text-shadow:
         0 0 12px #fff59d,
@@ -57,46 +161,75 @@ canvas{
         -3px 3px 0 #7a3b00,
         3px -3px 0 #7a3b00,
         -3px -3px 0 #7a3b00,
-        0 8px 18px rgba(0,0,0,0.6);
+        0 8px 18px rgba(0, 0, 0, 0.6);
 
     z-index: 200;
+
     display: none;
+
     pointer-events: none;
 
-    animation: messagePopIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+    animation:
+        messagePopIn 0.35s
+        cubic-bezier(0.2, 1.6, 0.4, 1);
 }
 
 @keyframes messagePopIn {
     0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.4);
+
+        transform:
+            translate(-50%, -50%)
+            scale(0.4);
     }
+
     60% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1.15);
+
+        transform:
+            translate(-50%, -50%)
+            scale(1.15);
     }
+
     100% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+
+        transform:
+            translate(-50%, -50%)
+            scale(1);
     }
 }
+
+/* =====================================================
+   レベル選択画面
+===================================================== */
+
 #levelSelect {
     position: fixed;
+
     inset: 0;
+
     z-index: 1000;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
     background: rgba(0, 0, 0, 0.68);
 }
 
 #levelSelectPanel {
     width: min(850px, 90%);
+
     padding: 35px;
+
     text-align: center;
+
     background: rgba(255, 255, 255, 0.96);
+
     border: 6px solid #ffd447;
     border-radius: 30px;
+
     box-shadow:
         0 0 0 6px rgba(117, 67, 0, 0.8),
         0 15px 40px rgba(0, 0, 0, 0.5);
@@ -104,40 +237,61 @@ canvas{
 
 #levelSelectPanel h1 {
     margin: 0 0 10px;
+
     font-size: clamp(32px, 5vw, 60px);
+
     color: #8a4c00;
-    text-shadow: 2px 2px 0 #ffd447;
+
+    text-shadow:
+        2px 2px 0 #ffd447;
 }
 
 .levelDescription {
     margin: 0 0 25px;
+
     font-size: clamp(18px, 2.5vw, 28px);
     font-weight: bold;
+
     color: #333;
 }
 
 #levelButtons {
     display: flex;
     justify-content: center;
+
     gap: 20px;
 }
 
 .levelButton {
     width: 220px;
     min-height: 210px;
+
     padding: 18px;
+
     cursor: pointer;
+
     border: 5px solid #704000;
     border-radius: 25px;
-    background: linear-gradient(180deg, #fff9bc, #ffca45);
+
+    background:
+        linear-gradient(
+            180deg,
+            #fff9bc,
+            #ffca45
+        );
+
     box-shadow:
         0 9px 0 #9b5b00,
         0 14px 18px rgba(0, 0, 0, 0.25);
-    transition: transform 0.15s, box-shadow 0.15s;
+
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s;
 }
 
 .levelButton:hover {
     transform: translateY(-5px);
+
     box-shadow:
         0 14px 0 #9b5b00,
         0 20px 25px rgba(0, 0, 0, 0.3);
@@ -145,7 +299,9 @@ canvas{
 
 .levelButton:active {
     transform: translateY(6px);
-    box-shadow: 0 3px 0 #9b5b00;
+
+    box-shadow:
+        0 3px 0 #9b5b00;
 }
 
 .levelButton span {
@@ -156,24 +312,88 @@ canvas{
     font-size: clamp(55px, 8vw, 90px);
     font-weight: bold;
     line-height: 1;
+
     color: #e66a00;
 }
 
 .levelText {
     margin-top: 10px;
+
     font-size: 24px;
     font-weight: bold;
+
     color: #333;
 }
 
 .levelTarget {
     margin-top: 8px;
+
     font-size: 21px;
     font-weight: bold;
+
     color: #b33100;
 }
 
+/* =====================================================
+   右下の制作者カード
+===================================================== */
+
+#creatorCard {
+    position: fixed;
+
+    right: 16px;
+    bottom: 16px;
+
+    z-index: 140;
+
+    min-width: 135px;
+
+    padding: 8px 13px;
+
+    text-align: center;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.95),
+            rgba(255, 233, 151, 0.95)
+        );
+
+    border: 2px solid #754100;
+    border-radius: 12px;
+
+    box-shadow:
+        0 5px 12px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+
+    transform: rotate(-1.5deg);
+
+    pointer-events: none;
+}
+
+.creatorYear {
+    color: #7a4200;
+
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.creatorName {
+    margin-top: 2px;
+
+    color: #322000;
+
+    font-size: 15px;
+    font-weight: 900;
+}
+
+/* =====================================================
+   スマホ・小さい画面
+===================================================== */
+
 @media (max-width: 700px) {
+
     #levelSelectPanel {
         padding: 20px;
     }
@@ -185,6 +405,7 @@ canvas{
     .levelButton {
         width: 31%;
         min-height: 165px;
+
         padding: 10px 5px;
     }
 
@@ -194,5 +415,63 @@ canvas{
 
     .levelTarget {
         font-size: 16px;
+    }
+
+    #info {
+        bottom: 22px;
+
+        min-width: 280px;
+
+        padding: 10px 18px;
+
+        gap: 17px;
+    }
+
+    .infoItem {
+        min-width: 95px;
+    }
+
+    .infoLabel {
+        font-size: 14px;
+    }
+
+    #time,
+    #count {
+        font-size: 43px;
+
+        -webkit-text-stroke: 1.5px #6d3300;
+    }
+
+    .infoUnit {
+        font-size: 19px;
+    }
+
+    .infoDivider {
+        height: 50px;
+    }
+
+    #creatorCard {
+        right: 7px;
+        bottom: 125px;
+
+        min-width: 105px;
+
+        padding: 6px 8px;
+    }
+
+    .creatorYear {
+        font-size: 10px;
+    }
+
+    .creatorName {
+        font-size: 12px;
+    }
+
+    #message {
+        max-width: 95vw;
+
+        font-size: clamp(38px, 12vw, 75px);
+
+        -webkit-text-stroke: 2px #7a3b00;
     }
 }
