@@ -85,7 +85,7 @@ function decayPerSecond(perFrameFactor, deltaSeconds) {
 // Game変数
 // =====================================================
 let clickCount = 0;
-let timeLeft = 20;
+let timeLeft = 15;
 
 let gameStarted = false;
 let gameFinished = false;
@@ -178,7 +178,7 @@ function selectLevel(level, target) {
     clickCount = 0;
     countText.textContent = clickCount;
 
-    timeLeft = 20;
+    timeLeft = 15;
     timeText.textContent = timeLeft;
 
     if (levelSelectScreen) {
@@ -211,12 +211,12 @@ window.addEventListener("keydown", (event) => {
 
     if (selectedLevel !== null) return;
 
-    if (event.code === "KeyA") {
-        selectLevel("A", 10);
-    } else if (event.code === "KeyB") {
-        selectLevel("B", 25);
-    } else if (event.code === "KeyC") {
-        selectLevel("C", 40);
+    if (event.code === "Keyわ") {
+        selectLevel("わ", 30);
+    } else if (event.code === "Keyく") {
+        selectLevel("く", 40);
+    } else if (event.code === "Keyなつ") {
+        selectLevel("なつ", 50);
     }
 });
 
@@ -660,7 +660,7 @@ function startGame() {
     gameStarted = true;
     isCountingDown = false;
 
-    timeLeft = 20;
+    timeLeft = 15;
     timeText.textContent = timeLeft;
 
     const timer = setInterval(() => {
