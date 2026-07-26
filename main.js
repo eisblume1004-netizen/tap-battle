@@ -359,7 +359,7 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
     // 以前の約2倍。画面上でしっかり存在感が出る大きさ
     const baseScale =
-        2.6 + Math.random() * 1.2;
+        5.5 + Math.random() * 2.0;
 
     fire.scale.set(
         baseScale,
@@ -368,8 +368,8 @@ for (let i = 0; i < FIRE_COUNT; i++) {
     );
 
     aura.scale.set(
-        baseScale * 1.7,
-        baseScale * 1.7,
+        baseScale * 2.2,
+        baseScale * 2.2,
         1
     );
 
@@ -397,15 +397,15 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
         // ボスからの距離
         radius:
-            4.2 +
+            7.5 +
             Math.random() *
-            3.8,
+            5.5,
 
         // ボスを基準にした高さ
         height:
-            1.4 +
+            0.8 +
             Math.random() *
-            4.8,
+            6.2,
 
         // 上下運動のタイミングをずらす
         floatOffset:
