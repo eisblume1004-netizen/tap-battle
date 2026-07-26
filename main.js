@@ -229,7 +229,7 @@ elementSelectScreen.id = "elementSelectScreen";
 
 elementSelectScreen.innerHTML = `
     <div class="elementSelectPanel">
-        <div class="elementSelectTitle">属性を選択</div>
+        <div class="elementSelectTitle">ぞくせいをえらんでね！</div>
 
         <div class="elementButtonRow">
             <button class="elementButton waterButton" data-element="water">
@@ -485,6 +485,94 @@ for (let i = 0; i < 2; i++) {
     waterRings.push(ring);
 }
 
+
+// 水の波：ゆらゆら広がるリング
+const waterWaveGroup = new THREE.Group();
+waterDropGroup.add(waterWaveGroup);
+
+const waterWaves = [];
+
+for (let i = 0; i < 4; i++) {
+
+    const wave = new THREE.Mesh(
+        new THREE.TorusGeometry(
+            0.30 + i * 0.10,
+            0.018,
+            10,
+            96
+        ),
+        new THREE.MeshBasicMaterial({
+            color: 0x8eeeff,
+            transparent: true,
+            opacity: 0.52 - i * 0.08,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        })
+    );
+
+    wave.rotation.x = Math.PI / 2;
+    wave.rotation.z = i * 0.8;
+
+    waterWaveGroup.add(wave);
+    waterWaves.push(wave);
+}
+
+// 水しぶき
+const waterSplashes = [];
+
+for (let i = 0; i < 18; i++) {
+
+    const splash = new THREE.Mesh(
+        new THREE.SphereGeometry(0.022, 10, 10),
+        new THREE.MeshBasicMaterial({
+            color: 0xc8f8ff,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        })
+    );
+
+    waterDropGroup.add(splash);
+
+    waterSplashes.push({
+        mesh: splash,
+        angle: Math.random() * Math.PI * 2,
+        radius: 0.28 + Math.random() * 0.55,
+        speed: 1.8 + Math.random() * 2.0,
+        height: (Math.random() - 0.5) * 0.55,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
+// あわ
+const waterBubbles = [];
+
+for (let i = 0; i < 12; i++) {
+
+    const bubble = new THREE.Mesh(
+        new THREE.SphereGeometry(0.028 + Math.random() * 0.025, 12, 12),
+        new THREE.MeshBasicMaterial({
+            color: 0xe8fdff,
+            transparent: true,
+            opacity: 0.48,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
+        })
+    );
+
+    waterDropGroup.add(bubble);
+
+    waterBubbles.push({
+        mesh: bubble,
+        x: (Math.random() - 0.5) * 1.2,
+        y: -0.55 + Math.random() * 1.0,
+        z: (Math.random() - 0.5) * 0.6,
+        speed: 0.15 + Math.random() * 0.25,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
 // ------------------------------
 // 雷属性：稲妻
 // ------------------------------
@@ -542,6 +630,66 @@ for (let i = 0; i < 9; i++) {
     createLightningBolt();
 }
 
+
+// 太い放電
+const thunderArcGroup = new THREE.Group();
+thunderGroup.add(thunderArcGroup);
+
+const thunderArcs = [];
+
+function createThunderArc(index) {
+
+    const points = [];
+    const segments = 7;
+
+    for (let i = 0; i <= segments; i++) {
+
+        const p = i / segments;
+
+        points.push(
+            new THREE.Vector3(
+                (Math.random() - 0.5) * 0.22,
+                p * 1.15 - 0.575,
+                (Math.random() - 0.5) * 0.18
+            )
+        );
+    }
+
+    const curve = new THREE.CatmullRomCurve3(points);
+
+    const geometry = new THREE.TubeGeometry(
+        curve,
+        28,
+        0.018 + Math.random() * 0.012,
+        8,
+        false
+    );
+
+    const material = new THREE.MeshBasicMaterial({
+        color: index % 2 === 0 ? 0xffff66 : 0xffffff,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+    });
+
+    const arc = new THREE.Mesh(geometry, material);
+
+    thunderArcGroup.add(arc);
+
+    thunderArcs.push({
+        mesh: arc,
+        angle: Math.random() * Math.PI * 2,
+        radius: 0.44 + Math.random() * 0.40,
+        phase: Math.random() * Math.PI * 2,
+        speed: 2.2 + Math.random() * 2.0
+    });
+}
+
+for (let i = 0; i < 12; i++) {
+    createThunderArc(i);
+}
+
 // 雷の外周リング
 const thunderRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.53, 0.025, 10, 72),
@@ -577,8 +725,8 @@ for (let i = 0; i < 3; i++) {
         new THREE.MeshBasicMaterial({
             color:
                 i === 0
-                    ? 0xeaffff
-                    : 0x8df6ff,
+                    ? 0xe8fff0
+                    : 0xb8f5c8,
             transparent: true,
             opacity: 0.72 - i * 0.1,
             blending: THREE.AdditiveBlending,
@@ -617,7 +765,7 @@ for (let i = 0; i < 34; i++) {
     const particle = new THREE.Mesh(
         new THREE.SphereGeometry(0.025, 10, 10),
         new THREE.MeshBasicMaterial({
-            color: 0xeaffff,
+            color: 0xe8fff0,
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending,
@@ -738,6 +886,89 @@ function updateElementEffects(deltaSeconds) {
 
             ring.scale.setScalar(pulse);
         });
+
+        waterWaves.forEach((wave, index) => {
+
+            const cycle =
+                (
+                    time * 0.75 +
+                    index * 0.25
+                ) % 1;
+
+            const waveScale =
+                0.65 +
+                cycle * 1.15;
+
+            wave.scale.setScalar(waveScale);
+
+            wave.material.opacity =
+                (1 - cycle) * 0.55;
+
+            wave.rotation.z +=
+                (index % 2 === 0 ? 0.7 : -0.6) *
+                deltaSeconds;
+        });
+
+        waterSplashes.forEach((splashData) => {
+
+            splashData.angle +=
+                splashData.speed *
+                deltaSeconds;
+
+            const r =
+                splashData.radius +
+                Math.sin(
+                    time * 4 +
+                    splashData.phase
+                ) *
+                0.10;
+
+            splashData.mesh.position.set(
+                Math.cos(splashData.angle) * r,
+                splashData.height +
+                    Math.sin(
+                        time * 5 +
+                        splashData.phase
+                    ) *
+                    0.16,
+                Math.sin(splashData.angle) * r
+            );
+
+            splashData.mesh.scale.setScalar(
+                0.7 +
+                Math.sin(
+                    time * 7 +
+                    splashData.phase
+                ) *
+                0.25
+            );
+        });
+
+        waterBubbles.forEach((bubbleData) => {
+
+            bubbleData.y +=
+                bubbleData.speed *
+                deltaSeconds;
+
+            if (bubbleData.y > 0.85) {
+                bubbleData.y = -0.75;
+                bubbleData.x =
+                    (Math.random() - 0.5) * 1.2;
+                bubbleData.z =
+                    (Math.random() - 0.5) * 0.6;
+            }
+
+            bubbleData.mesh.position.set(
+                bubbleData.x +
+                    Math.sin(
+                        time * 2 +
+                        bubbleData.phase
+                    ) *
+                    0.08,
+                bubbleData.y,
+                bubbleData.z
+            );
+        });
     }
 
     // --------------------------
@@ -757,18 +988,18 @@ function updateElementEffects(deltaSeconds) {
                     time *
                     (
                         index % 2 === 0
-                            ? 1.8
-                            : -1.5
+                            ? 2.8
+                            : -2.4
                     );
 
                 boltData.line.position.set(
                     Math.cos(angle) *
                         boltData.radius,
                     Math.sin(
-                        time * 4 +
+                        time * 6 +
                         boltData.phase
                     ) *
-                        0.24,
+                        0.34,
                     Math.sin(angle) *
                         boltData.radius
                 );
@@ -777,32 +1008,84 @@ function updateElementEffects(deltaSeconds) {
                     -angle +
                     Math.PI / 2;
 
-                // バチバチ点滅
                 const flash =
                     Math.sin(
-                        time * 18 +
+                        time * 28 +
                         boltData.phase
                     );
 
                 boltData.line.visible =
-                    flash > -0.2 ||
-                    Math.random() > 0.83;
+                    flash > -0.55 ||
+                    Math.random() > 0.72;
 
                 boltData.line.material.opacity =
-                    0.5 +
-                    Math.random() * 0.5;
+                    0.7 +
+                    Math.random() * 0.3;
             }
         );
 
-        // 雷属性は元気玉自体も細かく脈打つ
+        thunderArcs.forEach((arcData, index) => {
+
+            const angle =
+                arcData.angle +
+                time *
+                (
+                    index % 2 === 0
+                        ? arcData.speed
+                        : -arcData.speed
+                );
+
+            arcData.mesh.position.set(
+                Math.cos(angle) *
+                    arcData.radius,
+                Math.sin(
+                    time * 7 +
+                    arcData.phase
+                ) *
+                    0.30,
+                Math.sin(angle) *
+                    arcData.radius
+            );
+
+            arcData.mesh.rotation.z =
+                -angle +
+                Math.PI / 2;
+
+            const blink =
+                Math.sin(
+                    time * 32 +
+                    arcData.phase
+                );
+
+            arcData.mesh.visible =
+                blink > -0.45 ||
+                Math.random() > 0.62;
+
+            arcData.mesh.material.opacity =
+                0.75 +
+                Math.random() * 0.25;
+
+            const arcScale =
+                0.85 +
+                Math.random() * 0.45;
+
+            arcData.mesh.scale.setScalar(
+                arcScale
+            );
+        });
+
         const thunderPulse =
             1 +
-            Math.sin(time * 22) *
-            0.045;
+            Math.sin(time * 30) *
+            0.075;
 
         spiritBall.scale.multiplyScalar(
             thunderPulse
         );
+
+        ballGlowLight.intensity =
+            8 +
+            Math.random() * 12;
     }
 
     // --------------------------
@@ -1022,7 +1305,7 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
     // 以前の約2倍。画面上でしっかり存在感が出る大きさ
     const baseScale =
-        3.0 + Math.random() * 1.2;
+        2.6 + Math.random() * 1.2;
 
     fire.scale.set(
         baseScale,
@@ -1140,7 +1423,7 @@ function startEnemyIntro() {
     // 最初はまだ表示しない
     boss.visible = false;
 
-    showMessage("てきがあらわれた！");
+    showMessage("敵があらわれた！");
 }
 
 
@@ -1556,9 +1839,9 @@ function updateBallColor() {
         ],
 
         wind: [
-            0x59d8dc,
-            0x82f2ed,
-            0xc5ffff,
+            0x9ee7b8,
+            0xb8f5c8,
+            0xdfffe8,
             0xffffff
         ]
     };
@@ -2373,8 +2656,8 @@ function updateFireBalls(deltaSeconds) {
                 );
 
                 aura.scale.set(
-                    attackScale * 1.5,
-                    attackScale * 1.5,
+                    attackScale * 1.9,
+                    attackScale * 1.9,
                     1
                 );
 
