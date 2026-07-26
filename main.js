@@ -359,7 +359,7 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
     // 以前の約2倍。画面上でしっかり存在感が出る大きさ
     const baseScale =
-        5.5 + Math.random() * 2.0;
+        5.0 + Math.random() * 2.0;
 
     fire.scale.set(
         baseScale,
@@ -397,13 +397,13 @@ for (let i = 0; i < FIRE_COUNT; i++) {
 
         // ボスからの距離
         radius:
-            7.5 +
+            4.2 +
             Math.random() *
             5.5,
 
         // ボスを基準にした高さ
         height:
-            0.8 +
+            1.4 +
             Math.random() *
             6.2,
 
