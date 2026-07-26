@@ -299,6 +299,104 @@ scene.add(boss);
 // 最初はボスを隠しておく
 boss.visible = false;
 
+
+// =====================================================
+// ボスが操る火の玉
+// images/hi.png を3〜6個ランダムに表示
+// =====================================================
+
+const fireTextureLoader = new THREE.TextureLoader();
+
+const fireTexture = fireTextureLoader.load(
+    "./images/hi.png",
+    () => {
+        console.log("火の玉画像の読み込み成功！");
+    },
+    undefined,
+    (error) => {
+        console.error("火の玉画像の読み込み失敗", error);
+    }
+);
+
+const fireBalls = [];
+
+// ページを開くたびに3〜6個からランダムで決まる
+const FIRE_COUNT = THREE.MathUtils.randInt(3, 6);
+
+// 1個だけ手前へ飛び出す演出用
+let fireAttackIndex = -1;
+let fireAttackProgress = 0;
+let nextFireAttackTime =
+    performance.now() + 2000 + Math.random() * 2000;
+
+// ボス敗北後の飛び散り演出用
+let fireBallsDefeated = false;
+
+for (let i = 0; i < FIRE_COUNT; i++) {
+
+    const fireMaterial = new THREE.SpriteMaterial({
+        map: fireTexture,
+        transparent: true,
+        depthWrite: false,
+        opacity: 1
+    });
+
+    const fire = new THREE.Sprite(fireMaterial);
+
+    const baseScale =
+        0.65 + Math.random() * 0.25;
+
+    fire.scale.set(
+        baseScale,
+        baseScale,
+        1
+    );
+
+    fire.visible = false;
+
+    scene.add(fire);
+
+    fireBalls.push({
+        sprite: fire,
+
+        // 初期角度
+        angle:
+            Math.random() *
+            Math.PI *
+            2,
+
+        // 周回速度
+        speed:
+            0.45 +
+            Math.random() *
+            0.4,
+
+        // ボスからの距離
+        radius:
+            1.25 +
+            Math.random() *
+            0.55,
+
+        // ボスを基準にした高さ
+        height:
+            1.7 +
+            Math.random() *
+            1.3,
+
+        // 上下運動のタイミングをずらす
+        floatOffset:
+            Math.random() *
+            Math.PI *
+            2,
+
+        baseScale: baseScale,
+
+        // 敗北時の飛ぶ方向
+        defeatVelocity:
+            new THREE.Vector3()
+    });
+}
+
 // =====================================================
 // ボス登場演出
 // =====================================================
@@ -937,6 +1035,9 @@ function updateExplosion(deltaSeconds) {
 
         spiritBall.visible = false;
 
+        // ボスの敗北に合わせて火の玉を飛び散らせる
+        startFireBallDefeat();
+
         explosion.visible = true;
         explosion.position.copy(spiritBall.position);
         explosion.scale.set(0.8, 0.8, 0.8);
@@ -1301,10 +1402,10 @@ function showGameClear() {
     gameClearStarted = true;
     gameClear = true;
 
-    showMessage("GAME CLEAR!!");
+    showMessage("火の試練\nクリア!!");
     startConfetti();
 
-    console.log("GAME CLEAR!!");
+    console.log("火の試練クリア！");
 }
 
 function updateGameClear() {
@@ -1406,6 +1507,266 @@ function updateBossIdle() {
         Math.sin(time * 2.2) * 0.08;
 }
 
+
+// =====================================================
+// ボスが操る火の玉の更新
+// =====================================================
+
+function updateFireBalls(deltaSeconds) {
+
+    // ボス敗北後は飛び散り専用の動きに切り替える
+    if (fireBallsDefeated) {
+        updateDefeatedFireBalls(deltaSeconds);
+        return;
+    }
+
+    // 登場前・敗北演出中・消滅後は表示しない
+    if (
+        !boss.visible ||
+        !enemyIntroFinished ||
+        isExplosion ||
+        bossFlying ||
+        showStar ||
+        gameClear
+    ) {
+
+        for (const fireBall of fireBalls) {
+            fireBall.sprite.visible = false;
+        }
+
+        return;
+    }
+
+    const currentTime =
+        performance.now();
+
+    const time =
+        currentTime * 0.001;
+
+    // 2〜4秒ごとにランダムな1個を手前へ飛び出させる
+    if (
+        fireAttackIndex === -1 &&
+        currentTime >= nextFireAttackTime
+    ) {
+
+        fireAttackIndex =
+            Math.floor(
+                Math.random() *
+                fireBalls.length
+            );
+
+        fireAttackProgress = 0;
+    }
+
+    fireBalls.forEach(
+        (fireBall, index) => {
+
+            const fire =
+                fireBall.sprite;
+
+            fire.visible = true;
+
+            fireBall.angle +=
+                fireBall.speed *
+                deltaSeconds;
+
+            // 少しだけ軌道を伸び縮みさせる
+            const breathingRadius =
+                fireBall.radius +
+                Math.sin(
+                    time * 1.8 +
+                    fireBall.floatOffset
+                ) *
+                0.12;
+
+            let x =
+                boss.position.x +
+                Math.cos(
+                    fireBall.angle
+                ) *
+                breathingRadius;
+
+            let y =
+                boss.position.y +
+                fireBall.height +
+                Math.sin(
+                    time * 2.8 +
+                    fireBall.floatOffset
+                ) *
+                0.2;
+
+            let z =
+                boss.position.z +
+                Math.sin(
+                    fireBall.angle
+                ) *
+                0.45;
+
+            // 選ばれた1個だけ、カメラ側へ飛び出して戻る
+            if (index === fireAttackIndex) {
+
+                fireAttackProgress +=
+                    deltaSeconds * 1.15;
+
+                const progress =
+                    Math.min(
+                        fireAttackProgress,
+                        1
+                    );
+
+                // 0 → 1 → 0 の動き
+                const attackAmount =
+                    Math.sin(
+                        progress *
+                        Math.PI
+                    );
+
+                z +=
+                    attackAmount *
+                    3.2;
+
+                y +=
+                    attackAmount *
+                    0.35;
+
+                const attackScale =
+                    fireBall.baseScale +
+                    attackAmount *
+                    0.35;
+
+                fire.scale.set(
+                    attackScale,
+                    attackScale,
+                    1
+                );
+
+                if (progress >= 1) {
+
+                    fireAttackIndex = -1;
+                    fireAttackProgress = 0;
+
+                    nextFireAttackTime =
+                        performance.now() +
+                        2000 +
+                        Math.random() *
+                        2000;
+                }
+
+            } else {
+
+                // 普段も少し脈打たせる
+                const pulseScale =
+                    fireBall.baseScale +
+                    Math.sin(
+                        time * 4 +
+                        fireBall.floatOffset
+                    ) *
+                    0.05;
+
+                fire.scale.set(
+                    pulseScale,
+                    pulseScale,
+                    1
+                );
+            }
+
+            fire.position.set(
+                x,
+                y,
+                z
+            );
+
+            // 炎そのものが左右に揺れているように見せる
+            fire.material.rotation =
+                Math.sin(
+                    time * 2.5 +
+                    fireBall.floatOffset
+                ) *
+                0.12;
+        }
+    );
+}
+
+
+// =====================================================
+// ボス敗北時：火の玉が制御を失って飛び散る
+// =====================================================
+
+function startFireBallDefeat() {
+
+    if (fireBallsDefeated) return;
+
+    fireBallsDefeated = true;
+
+    fireAttackIndex = -1;
+    fireAttackProgress = 0;
+
+    for (const fireBall of fireBalls) {
+
+        const fire =
+            fireBall.sprite;
+
+        fire.visible = true;
+        fire.material.opacity = 1;
+
+        // それぞれ違う方向へ勢いよく飛び散る
+        fireBall.defeatVelocity.set(
+            (Math.random() - 0.5) * 5,
+            2 + Math.random() * 4,
+            1 + Math.random() * 4
+        );
+    }
+}
+
+
+function updateDefeatedFireBalls(
+    deltaSeconds
+) {
+
+    for (const fireBall of fireBalls) {
+
+        const fire =
+            fireBall.sprite;
+
+        if (!fire.visible) continue;
+
+        fire.position.addScaledVector(
+            fireBall.defeatVelocity,
+            deltaSeconds
+        );
+
+        // 重力のように少しずつ下へ落とす
+        fireBall.defeatVelocity.y -=
+            2.5 *
+            deltaSeconds;
+
+        fire.material.rotation +=
+            3 *
+            deltaSeconds;
+
+        fire.scale.multiplyScalar(
+            Math.pow(
+                0.95,
+                deltaSeconds *
+                FPS_BASE
+            )
+        );
+
+        fire.material.opacity -=
+            1.4 *
+            deltaSeconds;
+
+        if (
+            fire.material.opacity <= 0 ||
+            fire.scale.x <= 0.05
+        ) {
+
+            fire.visible = false;
+        }
+    }
+}
+
+
 // =====================================================
 // Resize
 // =====================================================
@@ -1449,6 +1810,9 @@ function animate() {
     if (enemyIntroFinished) {
         updateBossIdle();
     }
+
+    // ボスの位置更新後に火の玉を追従させる
+    updateFireBalls(deltaSeconds);
 
     updateLaunch(deltaSeconds);
     updateReflectedBall(deltaSeconds);
