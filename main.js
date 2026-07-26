@@ -1426,10 +1426,10 @@ function showGameClear() {
     gameClearStarted = true;
     gameClear = true;
 
-    showMessage("火の試練\nクリア!!");
+    showMessage("ひのしれん\nクリア!!");
     startConfetti();
 
-    console.log("火の試練クリア！");
+    console.log("ひのしれんクリア！");
 }
 
 function updateGameClear() {
