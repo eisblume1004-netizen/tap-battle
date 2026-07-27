@@ -1423,7 +1423,7 @@ function startEnemyIntro() {
     // 最初はまだ表示しない
     boss.visible = false;
 
-    showMessage("敵があらわれた！");
+    showMessage("てきがあらわれた！");
 }
 
 
