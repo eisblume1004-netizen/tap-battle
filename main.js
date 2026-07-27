@@ -1687,43 +1687,81 @@ window.addEventListener("keydown", (event) => {
         tapPower();
     }
 });
+// =====================================================
+// スタート音
+// =====================================================
 
+const startSE = new Audio("./models/start.mp3");
+startSE.preload = "auto";
+startSE.volume = 1.0;
 // =====================================================
 // カウントダウン
 // =====================================================
 function startCountdown() {
 
+    if (isCountingDown || gameStarted) return;
+
     isCountingDown = true;
     countdown = 3;
 
-    showMessage("READY");
+    // 音を最初から再生
+    startSE.pause();
+    startSE.currentTime = 0;
 
+    const playPromise = startSE.play();
+
+    if (playPromise !== undefined) {
+
+        playPromise.catch((error) => {
+            console.error(
+                "スタート音を再生できませんでした",
+                error
+            );
+        });
+    }
+
+    // 最初の「ピッ」
+    showMessage("3");
+
+    // 2回目の「ピッ」
     setTimeout(() => {
 
-        showMessage(countdown);
+        if (!isCountingDown) return;
 
-        const countdownTimer = setInterval(() => {
+        countdown = 2;
+        showMessage("2");
 
-            countdown--;
+    }, 1000);
 
-            if (countdown > 0) {
-                showMessage(countdown);
-            } else {
-                clearInterval(countdownTimer);
+    // 3回目の「ピッ」
+    setTimeout(() => {
 
-                showMessage("START!!");
+        if (!isCountingDown) return;
 
-                setTimeout(() => {
-                    hideMessage();
-                    startGame();
-                }, 700);
-            }
+        countdown = 1;
+        showMessage("1");
 
-        }, 1000);
+    }, 2000);
 
-    }, 800);
+    // 長い「ピー！」が始まる瞬間
+    setTimeout(() => {
+
+        if (!isCountingDown) return;
+
+        showMessage("スタート！");
+
+        // ピー！と同時にゲーム開始
+        startGame();
+
+    }, 3100);
+
+    // スタートの文字だけ少し後に消す
+    setTimeout(() => {
+
+        hideMessage();
+
+    }, 3900);
 }
-
 // =====================================================
 // ゲーム開始
 // =====================================================
