@@ -2412,10 +2412,10 @@ function showGameClear() {
     gameClearStarted = true;
     gameClear = true;
 
-    showMessage("ひのしれん\nクリア!!");
+    showMessage("ひのぼうけん\nクリア!!");
     startConfetti();
 
-    console.log("ひのしれんクリア！");
+    console.log("ひのぼうけんクリア！");
 }
 
 function updateGameClear() {
