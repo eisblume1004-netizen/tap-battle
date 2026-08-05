@@ -189,8 +189,6 @@ function selectLevel(level, target) {
     console.log("選択レベル：" + selectedLevel);
     console.log("目標連打数：" + targetCount);
 
-    // 難易度を選んだら、次に属性選択を表示する
-    showElementSelect();
 }
 
 levelButtons.forEach((button) => {
@@ -270,13 +268,9 @@ const bossTexture = bossTextureLoader.load(
         bossImageReady = true;
 
         // レベル選択済みなら登場演出を始める
-        if (
-            selectedLevel !== null &&
-            selectedElement !== null
-        ) {
-            startEnemyIntro();
-        }
-    }
+        if (selectedLevel !== null){
+             startEnemyIntro();
+         {
 );
 
 const bossMaterial = new THREE.SpriteMaterial({
@@ -450,9 +444,6 @@ const bossIntroStartScale = new THREE.Vector3(0.01, 0.01, 0.01);
 // =====================================================
 
 function startEnemyIntro() {
-
-    // 選択した属性の元気玉とエフェクトを反映
-    setElementAppearance();
 
     // 二重に始まらないようにする
     if (enemyIntroStarted) return;
@@ -724,8 +715,7 @@ window.addEventListener("keydown", (event) => {
 
     if (event.code !== "Enter") return;
 
-    // 属性選択とボス登場が終わるまでは操作できない
-    if (selectedElement === null) return;
+    // ボス登場が終わるまでは操作できない
     if (!enemyIntroFinished) return;
     // 長押し（キーリピート）は無効化。離してもう一度押した時だけカウントする
     if (event.repeat) return;
@@ -1995,7 +1985,7 @@ function animate() {
     }
 
     updateSpiritBall(deltaSeconds);
-    updateElementEffects(deltaSeconds);
+    
 
     // ボス登場演出
     updateEnemyIntro(deltaSeconds);
