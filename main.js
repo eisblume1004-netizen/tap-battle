@@ -529,18 +529,18 @@ function updateEnemyIntro(deltaSeconds) {
         (1 - progress) *
         0.25;
 
-    if (progress >= 1) {
+   if (progress >= 1) {
 
-        enemyIntroFinished = true;
+    enemyIntroFinished = true;
 
-        boss.position.copy(bossBasePosition);
-        boss.scale.copy(bossIntroTargetScale);
-        boss.material.rotation = 0;
+    boss.position.copy(bossBasePosition);
+    boss.scale.copy(bossIntroTargetScale);
+    boss.material.rotation = 0;
 
-        setTimeout(() => {
-            showMessage("スタート！");
-        }, 500);
-    }
+    // 少し待ってから自動でカウントダウン開始
+    setTimeout(() => {
+        startCountdown();
+    }, 500);
 }
 // =====================================================
 // 爆発の中心光
@@ -722,18 +722,13 @@ window.addEventListener("keydown", (event) => {
 
     // ボス登場が終わるまでは操作できない
     if (!enemyIntroFinished) return;
-    // 長押し（キーリピート）は無効化。離してもう一度押した時だけカウントする
+
+    // 長押し無効
     if (event.repeat) return;
 
     if (gameFinished) return;
 
-    if (!gameStarted && !isCountingDown) {
-        startCountdown();
-        return;
-    }
-
-    if (isCountingDown) return;
-
+    // ゲーム中だけ連打を受け付ける
     if (gameStarted) {
         tapPower();
     }
