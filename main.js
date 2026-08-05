@@ -100,6 +100,30 @@ let selectedElement = null;
 let targetCount = 0;
 let bossImageReady = false;
 let levelCleared = false;
+
+// =====================================================
+// 結果ランク・レベル設定
+// =====================================================
+// fail   : クリア失敗
+// clear  : 通常クリア
+// great1 : 最低ライン + 10回以上
+// great2 : 最低ライン + 20回以上
+let resultRank = "fail";
+
+const LEVEL_TARGETS = {
+    "わ": 15,
+    "く": 25,
+    "なつ": 35
+};
+
+function debugLog(label, data = null) {
+    if (data === null) {
+        console.log(`[GAME] ${label}`);
+    } else {
+        console.log(`[GAME] ${label}`, data);
+    }
+}
+
 let failureResultStarted = false;
 let failureSequenceActive = false;
 // 元気玉跳ね返し
@@ -143,6 +167,48 @@ const timeText = document.getElementById("time");
 const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 
+// HTMLに #remaining がない場合は自動生成する。
+// 後からCSSで見た目を自由に変更できるよう、idだけ固定している。
+let remainingText = document.getElementById("remaining");
+
+if (!remainingText) {
+    remainingText = document.createElement("div");
+    remainingText.id = "remaining";
+    remainingText.style.position = "fixed";
+    remainingText.style.top = "90px";
+    remainingText.style.left = "50%";
+    remainingText.style.transform = "translateX(-50%)";
+    remainingText.style.zIndex = "30";
+    remainingText.style.padding = "10px 22px";
+    remainingText.style.borderRadius = "22px";
+    remainingText.style.background = "rgba(0, 0, 0, 0.72)";
+    remainingText.style.color = "white";
+    remainingText.style.fontSize = "26px";
+    remainingText.style.fontWeight = "bold";
+    remainingText.style.textAlign = "center";
+    remainingText.style.display = "none";
+    document.body.appendChild(remainingText);
+}
+
+function updateRemainingCount() {
+    if (!remainingText) return;
+
+    const remaining = Math.max(targetCount - clickCount, 0);
+
+    if (remaining > 0) {
+        remainingText.textContent = `クリアまで あと${remaining}かい`;
+        remainingText.dataset.state = "counting";
+    } else {
+        remainingText.textContent = "クリアラインたっせい！";
+        remainingText.dataset.state = "cleared";
+    }
+}
+
+function showResultMessage(html) {
+    messageText.innerHTML = html;
+    messageText.style.display = "block";
+}
+
 function showMessage(text) {
 
     messageText.textContent = text;
@@ -174,10 +240,14 @@ function selectLevel(level, target) {
     if (selectedLevel !== null) return;
 
     selectedLevel = level;
-    targetCount = target;
+    targetCount = LEVEL_TARGETS[level] ?? target;
 
     clickCount = 0;
     countText.textContent = clickCount;
+    resultRank = "fail";
+
+    remainingText.style.display = "block";
+    updateRemainingCount();
 
     timeLeft = 15;
     timeText.textContent = timeLeft;
@@ -186,8 +256,10 @@ function selectLevel(level, target) {
         levelSelectScreen.style.display = "none";
     }
 
-    console.log("選択レベル：" + selectedLevel);
-    console.log("目標連打数：" + targetCount);
+    debugLog("レベル選択", {
+        selectedLevel,
+        targetCount
+    });
 
     if (bossImageReady) {
         startEnemyIntro();
@@ -212,11 +284,11 @@ window.addEventListener("keydown", (event) => {
     if (selectedLevel !== null) return;
 
     if (event.code === "Keyわ") {
-        selectLevel("わ", 30);
+        selectLevel("わ", 15);
     } else if (event.code === "Keyく") {
-        selectLevel("く", 40);
+        selectLevel("く", 25);
     } else if (event.code === "Keyなつ") {
-        selectLevel("なつ", 50);
+        selectLevel("なつ", 35);
     }
 });
 
@@ -815,6 +887,11 @@ function startCountdown() {
 function startGame() {
 
     gameStarted = true;
+    debugLog("ゲーム開始", {
+        selectedLevel,
+        targetCount,
+        timeLimit: 15
+    });
     isCountingDown = false;
 
     timeLeft = 15;
@@ -846,6 +923,16 @@ function tapPower() {
 
     // 画面の連打数を更新
     countText.textContent = clickCount;
+    updateRemainingCount();
+
+    // デバッグしやすいよう、5回ごとに現在値を表示
+    if (clickCount % 5 === 0) {
+        debugLog("連打数更新", {
+            clickCount,
+            targetCount,
+            remaining: Math.max(targetCount - clickCount, 0)
+        });
+    }
 
     // -------------------------------------------------
     // 元気玉の大きさ
@@ -951,6 +1038,27 @@ function updateBallColor() {
 }
 
 // =====================================================
+// 結果ランク判定
+// =====================================================
+function calculateResultRank() {
+    if (clickCount < targetCount) {
+        resultRank = "fail";
+    } else if (clickCount >= targetCount + 20) {
+        resultRank = "great2";
+    } else if (clickCount >= targetCount + 10) {
+        resultRank = "great1";
+    } else {
+        resultRank = "clear";
+    }
+
+    debugLog("結果判定", {
+        clickCount,
+        targetCount,
+        resultRank
+    });
+}
+
+// =====================================================
 // TIME UP
 // =====================================================
 function finishGame() {
@@ -958,9 +1066,12 @@ function finishGame() {
     gameFinished = true;
     gameStarted = false;
 
-    // 目標回数を達成したか保存
-    levelCleared =
-        clickCount >= targetCount;
+    calculateResultRank();
+    levelCleared = resultRank !== "fail";
+
+    if (remainingText) {
+        remainingText.style.display = "none";
+    }
 
     showMessage("TIME UP!!");
 
@@ -1099,11 +1210,19 @@ function updateReflectedBall(deltaSeconds){
         document.body.style.background=
             "rgba(0,0,0,0.85)";
 
-        showMessage(
-            "GAME OVER\nあと"+
-            (targetCount-clickCount)+
-            "回だった..."
-        );
+        const remaining = Math.max(targetCount - clickCount, 0);
+
+        showResultMessage(`
+            <div class="failureTitle">GAME OVER</div>
+            <div class="resultCount">${clickCount}かい</div>
+            <div class="resultSubText">おせたよ！</div>
+            <div class="remainingResult">あと${remaining}かいだった！</div>
+        `);
+
+        debugLog("ゲームオーバー表示", {
+            clickCount,
+            remaining
+        });
     }
 
 }
@@ -1135,24 +1254,58 @@ function updateExplosion(deltaSeconds) {
 
         explosion.visible = true;
         explosion.position.copy(spiritBall.position);
-        explosion.scale.set(0.8, 0.8, 0.8);
         explosionMaterial.opacity = 1;
 
-        for (const particle of explosionParticles) {
+        let explosionStartScale = 0.8;
+        let activeExplosionCount = 40;
+        let particleScale = 1;
+        let particlePower = 0.55;
 
-            particle.position.copy(spiritBall.position);
-            particle.visible = true;
-            particle.material.opacity = 1;
-            particle.scale.set(1, 1, 1);
-
-            particle.userData.velocity.set(
-                (Math.random() - 0.5) * 0.55,
-                (Math.random() - 0.5) * 0.55,
-                (Math.random() - 0.5) * 0.55
-            );
+        if (resultRank === "great1") {
+            explosionStartScale = 1.25;
+            activeExplosionCount = 60;
+            particleScale = 1.25;
+            particlePower = 0.75;
+        } else if (resultRank === "great2") {
+            explosionStartScale = 1.8;
+            activeExplosionCount = explosionParticles.length;
+            particleScale = 1.55;
+            particlePower = 1;
         }
 
-        console.log("ドカーン！！");
+        explosion.scale.set(
+            explosionStartScale,
+            explosionStartScale,
+            explosionStartScale
+        );
+
+        explosionParticles.forEach((particle, index) => {
+            particle.position.copy(spiritBall.position);
+
+            const isActive = index < activeExplosionCount;
+            particle.visible = isActive;
+
+            if (!isActive) return;
+
+            particle.material.opacity = 1;
+            particle.scale.set(
+                particleScale,
+                particleScale,
+                particleScale
+            );
+
+            particle.userData.velocity.set(
+                (Math.random() - 0.5) * particlePower,
+                (Math.random() - 0.5) * particlePower,
+                (Math.random() - 0.5) * particlePower
+            );
+        });
+
+        debugLog("爆発開始", {
+            resultRank,
+            activeExplosionCount,
+            explosionStartScale
+        });
 
         isShake = true;
     }
@@ -1163,6 +1316,8 @@ function updateExplosion(deltaSeconds) {
     explosionMaterial.opacity -= EXPLOSION_OPACITY_FADE * deltaSeconds;
 
     for (const particle of explosionParticles) {
+
+        if (!particle.visible) continue;
 
         particle.position.addScaledVector(
             particle.userData.velocity,
@@ -1411,11 +1566,28 @@ function startStarEffect() {
 
     showStar = true;
 
-    for (const starMesh of starParticles) {
+    let activeStarCount = 10;
+    let starScale = 1;
+    let starPower = 0.45;
+
+    if (resultRank === "great1") {
+        activeStarCount = 17;
+        starScale = 1.3;
+        starPower = 0.65;
+    } else if (resultRank === "great2") {
+        activeStarCount = starParticles.length;
+        starScale = 1.65;
+        starPower = 0.9;
+    }
+
+    starParticles.forEach((starMesh, index) => {
+        const isActive = index < activeStarCount;
+        starMesh.visible = isActive;
+
+        if (!isActive) return;
 
         starMesh.position.copy(boss.position);
-        starMesh.scale.set(1, 1, 1);
-        starMesh.visible = true;
+        starMesh.scale.set(starScale, starScale, starScale);
         starMesh.material.opacity = 1;
 
         starMesh.rotation.set(
@@ -1424,11 +1596,10 @@ function startStarEffect() {
             Math.random() * Math.PI
         );
 
-        // 24個の星がそれぞれ違う方向へ勢いよく飛び散る
         starMesh.userData.velocity.set(
-            (Math.random() - 0.5) * 0.5,
-            0.15 + Math.random() * 0.35,
-            (Math.random() - 0.5) * 0.5
+            (Math.random() - 0.5) * starPower,
+            0.15 + Math.random() * starPower,
+            (Math.random() - 0.5) * starPower
         );
 
         starMesh.userData.spin.set(
@@ -1436,11 +1607,15 @@ function startStarEffect() {
             (Math.random() - 0.5) * 0.3,
             (Math.random() - 0.5) * 0.3
         );
-    }
+    });
 
     boss.visible = false;
 
-    console.log("星キラーン開始！");
+    debugLog("星エフェクト開始", {
+        resultRank,
+        activeStarCount,
+        starScale
+    });
 }
 
 function updateStar(deltaSeconds) {
@@ -1453,6 +1628,8 @@ function updateStar(deltaSeconds) {
     }
 
     for (const starMesh of starParticles) {
+
+        if (!starMesh.visible) continue;
 
         starMesh.position.addScaledVector(
             starMesh.userData.velocity,
@@ -1497,10 +1674,34 @@ function showGameClear() {
     gameClearStarted = true;
     gameClear = true;
 
-    showMessage("ひのぼうけん\nクリア!!");
+    if (remainingText) {
+        remainingText.style.display = "none";
+    }
+
+    let rankLabel = "";
+    let rankClass = "";
+
+    if (resultRank === "great1") {
+        rankLabel = '<div class="great1Label">すごい！！</div>';
+        rankClass = "great1Result";
+    } else if (resultRank === "great2") {
+        rankLabel = '<div class="great2Label">とってもすごい！！</div>';
+        rankClass = "great2Result";
+    }
+
+    showResultMessage(`
+        ${rankLabel}
+        <div class="resultTitle">ゲームクリア！</div>
+        <div class="resultCount ${rankClass}">${clickCount}かい</div>
+        <div class="resultSubText">おせたよ！</div>
+    `);
+
     startConfetti();
 
-    console.log("ひのぼうけんクリア！");
+    debugLog("ゲームクリア表示", {
+        clickCount,
+        resultRank
+    });
 }
 
 function updateGameClear() {
@@ -1522,9 +1723,22 @@ function startConfetti() {
 
     confettiStarted = true;
 
-    for (const piece of confettiPieces) {
-        piece.visible = true;
+    let activeConfettiCount = 35;
+
+    if (resultRank === "great1") {
+        activeConfettiCount = 55;
+    } else if (resultRank === "great2") {
+        activeConfettiCount = confettiPieces.length;
     }
+
+    confettiPieces.forEach((piece, index) => {
+        piece.visible = index < activeConfettiCount;
+    });
+
+    debugLog("紙吹雪開始", {
+        resultRank,
+        activeConfettiCount
+    });
 }
 
 function updateConfetti(deltaSeconds) {
