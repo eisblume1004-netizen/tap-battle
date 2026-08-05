@@ -472,6 +472,150 @@ canvas {
 
         font-size: clamp(38px, 12vw, 75px);
 
+        /* ===========================
+   クリアまでの残り回数
+=========================== */
+
+#remaining{
+
+    position:absolute;
+
+    top:20px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    padding:12px 28px;
+
+    border-radius:20px;
+
+    background:rgba(0,0,0,0.65);
+
+    color:white;
+
+    font-size:30px;
+
+    font-weight:bold;
+
+    z-index:999;
+
+}
+
+#remainingCount{
+
+    color:#ffe54d;
+
+    font-size:42px;
+
+}
+        .resultTitle{
+
+    font-size:70px;
+
+    font-weight:bold;
+
+    text-align:center;
+
+}
+
+.resultCount{
+
+    margin-top:20px;
+
+    font-size:120px;
+
+    font-weight:bold;
+
+    text-align:center;
+
+}
+
+.resultSubText{
+
+    margin-top:10px;
+
+    font-size:45px;
+
+    font-weight:bold;
+
+    text-align:center;
+
+}
+    .great1Label{
+
+    font-size:55px;
+
+    color:#ffd700;
+
+    font-weight:bold;
+
+    animation:great1 0.6s infinite alternate;
+
+}
+
+@keyframes great1{
+
+    from{
+
+        transform:scale(1);
+
+    }
+
+    to{
+
+        transform:scale(1.1);
+
+    }
+
+}    
+        .great2Label{
+
+    font-size:70px;
+
+    color:#ffcc00;
+
+    font-weight:bold;
+
+    animation:great2 .35s infinite alternate;
+
+}
+
+@keyframes great2{
+
+    from{
+
+        transform:scale(1);
+
+    }
+
+    to{
+
+        transform:scale(1.15);
+
+    }
+
+}
         -webkit-text-stroke: 2px #7a3b00;
     }
+}
+.failureTitle{
+
+    font-size:65px;
+
+    font-weight:bold;
+
+    text-align:center;
+
+}
+
+.remainingResult{
+
+    margin-top:25px;
+
+    font-size:40px;
+
+    font-weight:bold;
+
+    text-align:center;
+
 }
