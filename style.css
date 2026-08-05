@@ -471,151 +471,223 @@ canvas {
         max-width: 95vw;
 
         font-size: clamp(38px, 12vw, 75px);
+/* =====================================================
+   結果画面
+===================================================== */
 
-        /* ===========================
-   クリアまでの残り回数
-=========================== */
+#message {
+    position: fixed;
+    top: 46%;
+    left: 50%;
 
-#remaining{
+    transform: translate(-50%, -50%);
 
-    position:absolute;
+    width: min(90vw, 900px);
+    max-height: 78vh;
 
-    top:20px;
-    left:50%;
+    z-index: 1000;
 
-    transform:translateX(-50%);
+    text-align: center;
+    line-height: 1;
 
-    padding:12px 28px;
-
-    border-radius:20px;
-
-    background:rgba(0,0,0,0.65);
-
-    color:white;
-
-    font-size:30px;
-
-    font-weight:bold;
-
-    z-index:999;
-
+    pointer-events: none;
 }
 
-#remainingCount{
+/* 結果画面全体 */
+.resultScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 
-    color:#ffe54d;
+    gap: 6px;
 
-    font-size:42px;
+    padding: 20px 35px;
 
-}
-        .resultTitle{
+    border: 5px solid #ffd34d;
+    border-radius: 30px;
 
-    font-size:70px;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(70, 30, 0, 0.9),
+            rgba(5, 5, 10, 0.92)
+        );
 
-    font-weight:bold;
-
-    text-align:center;
-
-}
-
-.resultCount{
-
-    margin-top:20px;
-
-    font-size:120px;
-
-    font-weight:bold;
-
-    text-align:center;
-
+    box-shadow:
+        0 0 25px rgba(255, 190, 30, 0.9),
+        0 0 60px rgba(255, 115, 0, 0.65),
+        inset 0 0 30px rgba(255, 220, 100, 0.25);
 }
 
-.resultSubText{
+/* ゲームクリア */
+.resultTitle {
+    margin: 0;
 
-    margin-top:10px;
+    font-size: clamp(48px, 6vw, 86px);
+    font-weight: 900;
+    line-height: 0.95;
 
-    font-size:45px;
+    color: #ffe982;
 
-    font-weight:bold;
-
-    text-align:center;
-
-}
-    .great1Label{
-
-    font-size:55px;
-
-    color:#ffd700;
-
-    font-weight:bold;
-
-    animation:great1 0.6s infinite alternate;
-
+    text-shadow:
+        4px 4px 0 #8b4300,
+        -2px -2px 0 #fff5b5,
+        0 0 15px #ffb000,
+        0 0 35px #ff6500;
 }
 
-@keyframes great1{
+/* 押した回数 */
+.resultCount {
+    margin: 4px 0 0;
 
-    from{
+    font-size: clamp(82px, 11vw, 150px);
+    font-weight: 900;
+    line-height: 0.85;
 
-        transform:scale(1);
+    color: #fff4a8;
 
+    text-shadow:
+        5px 5px 0 #8d4700,
+        -2px -2px 0 white,
+        0 0 20px #ffc400,
+        0 0 45px #ff7100;
+}
+
+/* おせたよ */
+.resultSubText {
+    margin: 0;
+
+    font-size: clamp(32px, 4vw, 58px);
+    font-weight: 900;
+    line-height: 1;
+
+    color: white;
+
+    text-shadow:
+        3px 3px 0 #742f00,
+        0 0 15px #ffb000;
+}
+
+/* 豪華クリア1 */
+.great1Label {
+    margin: 0 0 2px;
+
+    font-size: clamp(34px, 4.5vw, 64px);
+    font-weight: 900;
+    line-height: 0.95;
+
+    color: #ffef65;
+
+    text-shadow:
+        4px 4px 0 #9b4800,
+        0 0 18px #ffd000,
+        0 0 35px #ff7300;
+
+    animation:
+        great1Bounce
+        0.55s ease-in-out
+        infinite alternate;
+}
+
+/* 豪華クリア2 */
+.great2Label {
+    margin: 0 0 2px;
+
+    font-size: clamp(38px, 5vw, 72px);
+    font-weight: 900;
+    line-height: 0.92;
+
+    color: #fff078;
+
+    text-shadow:
+        4px 4px 0 #9b2500,
+        -2px -2px 0 #fff8bc,
+        0 0 18px #ffdb00,
+        0 0 42px #ff3c00;
+
+    animation:
+        great2Bounce
+        0.38s ease-in-out
+        infinite alternate;
+}
+
+/* 豪華1の回数 */
+.great1Result {
+    color: #fff282;
+}
+
+/* 豪華2の回数 */
+.great2Result {
+    color: #fff4a2;
+
+    animation:
+        great2CountPulse
+        0.38s ease-in-out
+        infinite alternate;
+}
+
+/* ゲームオーバー */
+.failureTitle {
+    margin: 0;
+
+    font-size: clamp(48px, 6vw, 82px);
+    font-weight: 900;
+    line-height: 1;
+
+    color: white;
+
+    text-shadow:
+        4px 4px 0 #5b0000,
+        0 0 20px #ff2d2d;
+}
+
+.remainingResult {
+    margin-top: 8px;
+
+    font-size: clamp(28px, 3.5vw, 48px);
+    font-weight: 900;
+    line-height: 1;
+
+    color: #fff27a;
+
+    text-shadow:
+        3px 3px 0 #713000,
+        0 0 15px #ff9d00;
+}
+
+@keyframes great1Bounce {
+    from {
+        transform: translateY(0) scale(1);
     }
 
-    to{
-
-        transform:scale(1.1);
-
-    }
-
-}    
-        .great2Label{
-
-    font-size:70px;
-
-    color:#ffcc00;
-
-    font-weight:bold;
-
-    animation:great2 .35s infinite alternate;
-
-}
-
-@keyframes great2{
-
-    from{
-
-        transform:scale(1);
-
-    }
-
-    to{
-
-        transform:scale(1.15);
-
-    }
-
-}
-        -webkit-text-stroke: 2px #7a3b00;
+    to {
+        transform: translateY(-5px) scale(1.06);
     }
 }
-.failureTitle{
 
-    font-size:65px;
+@keyframes great2Bounce {
+    from {
+        transform:
+            translateY(0)
+            rotate(-1deg)
+            scale(1);
+    }
 
-    font-weight:bold;
-
-    text-align:center;
-
+    to {
+        transform:
+            translateY(-7px)
+            rotate(1deg)
+            scale(1.07);
+    }
 }
 
-.remainingResult{
+@keyframes great2CountPulse {
+    from {
+        transform: scale(1);
+    }
 
-    margin-top:25px;
-
-    font-size:40px;
-
-    font-weight:bold;
-
-    text-align:center;
-
+    to {
+        transform: scale(1.06);
+    }
 }
