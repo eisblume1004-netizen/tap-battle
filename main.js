@@ -189,6 +189,10 @@ function selectLevel(level, target) {
     console.log("選択レベル：" + selectedLevel);
     console.log("目標連打数：" + targetCount);
 
+    if (bossImageReady) {
+        startEnemyIntro();
+    }
+
 }
 
 levelButtons.forEach((button) => {
@@ -270,7 +274,8 @@ const bossTexture = bossTextureLoader.load(
         // レベル選択済みなら登場演出を始める
         if (selectedLevel !== null){
              startEnemyIntro();
-         {
+        }
+    }
 );
 
 const bossMaterial = new THREE.SpriteMaterial({
