@@ -147,15 +147,6 @@ const timeText = document.getElementById("time");
 const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 
-// クリアまでの残り回数表示。HTMLに無ければ自動生成する。
-let remainingText = document.getElementById("remaining");
-
-if (!remainingText) {
-    remainingText = document.createElement("div");
-    remainingText.id = "remaining";
-    remainingText.style.display = "none";
-    document.body.appendChild(remainingText);
-}
 
 // 結果画面・残り回数表示の見た目をJS側で追加する。
 // CSSファイル側に同名指定がある場合は、あとから読み込まれた方が優先される。
