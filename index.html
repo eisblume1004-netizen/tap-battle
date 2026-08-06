@@ -1,76 +1,131 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<title>ジャングル元気玉ゲーム</title>
+    <meta charset="UTF-8">
+    <title>ジャングル元気玉ゲーム</title>
 
-<script type="importmap">
-{
-    "imports": {
-        "three":"https://unpkg.com/three@0.179.1/build/three.module.js"
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.179.1/build/three.module.js"
+        }
     }
-}
-</script>
+    </script>
 
-<link rel="stylesheet" href="style.css">
-
+    <link rel="stylesheet" href="style.css">
 </head>
-<div id="creatorCard">
-    <div class="creatorYear">2026年 わく夏</div>
-    <div class="creatorName">伊藤ゼミ作成</div>
-</div>
+
 <body>
-<div id="info">
 
-    <div class="infoItem">
-        <span class="infoLabel">のこり</span>
-
-        <div class="infoValue">
-            <span id="time">15</span>
-            <span class="infoUnit">びょう</span>
+    <div id="creatorCard">
+        <div class="creatorYear">
+            2026年 わく夏
         </div>
-    </div>    
+
+        <div class="creatorName">
+            伊藤ゼミ作成
+        </div>
+    </div>
+
+    <!-- 残り時間・連打数 -->
+    <div id="info">
+
+        <div class="infoItem">
+            <span class="infoLabel">
+                のこり
+            </span>
+
+            <div class="infoValue">
+                <span id="time">15</span>
+                <span class="infoUnit">
+                    びょう
+                </span>
+            </div>
+        </div>
+
+        <div class="infoDivider"></div>
+
+        <div class="infoItem">
+            <span class="infoLabel">
+                れんだ
+            </span>
+
+            <div class="infoValue">
+                <span id="count">0</span>
+                <span class="infoUnit">
+                    かい
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- #infoの外に置く -->
     <div id="remaining">
-    クリアまで あと
-    <span id="remainingCount">0</span>
-    かい
-</div>
-    <div class="infoDivider"></div>
+        クリアまで あと
+        <span id="remainingCount">0</span>
+        かい
+    </div>
 
-    <div class="infoItem">
-        <span class="infoLabel">れんだ</span>
+    <div id="message"></div>
 
-        <div class="infoValue">
-            <span id="count">0</span>
-            <span class="infoUnit">かい</span>
+    <!-- レベル選択 -->
+    <div id="levelSelect">
+
+        <div id="levelSelectPanel">
+
+            <h1>
+                レベルをえらんでね！
+            </h1>
+
+            <p class="levelDescription">
+                15びょうでボタンをたくさんおそう！
+            </p>
+
+            <div id="levelButtons">
+
+                <button
+                    type="button"
+                    class="levelButton"
+                    data-level="わ"
+                    data-target="15"
+                >
+                    <span class="levelName">
+                        わ
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    class="levelButton"
+                    data-level="く"
+                    data-target="25"
+                >
+                    <span class="levelName">
+                        く
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    class="levelButton"
+                    data-level="なつ"
+                    data-target="35"
+                >
+                    <span class="levelName">
+                        なつ
+                    </span>
+                </button>
+
+            </div>
         </div>
     </div>
 
-</div>
-
-<div id="message"></div>
-<script type="module" src="main.js"></script>
-<!-- レベル選択画面：index.html の </body> の直前に追加 -->
-<div id="levelSelect">
-    <div id="levelSelectPanel">
-        <h1>レベルをえらんでね！</h1>
-        <p class="levelDescription">15びょうでボタンをたくさんおそう！</p>
-
-        <div id="levelButtons">
-            <button type="button" class="levelButton" data-level="A" data-target="10">
-                <span class="levelName">わ</span>
-            </button>
-
-            <button type="button" class="levelButton" data-level="B" data-target="25">
-                <span class="levelName">く</span>
-            </button>
-
-            <button type="button" class="levelButton" data-level="C" data-target="40">
-                <span class="levelName">なつ</span>
-            </button>
-        </div>
-    </div>
-</div>
+    <script
+        type="module"
+        src="main.js"
+    ></script>
 
 </body>
 </html>
