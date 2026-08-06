@@ -19,7 +19,7 @@ backgroundLoader.load(
 
         scene.background = texture;
 
-        console.log("背景画像の読み込み成功！");
+        debugLog("ASSET", "背景画像の読み込み成功");
     },
 
     undefined,
@@ -82,6 +82,16 @@ function decayPerSecond(perFrameFactor, deltaSeconds) {
 }
 
 // =====================================================
+// Debug
+// =====================================================
+const DEBUG_MODE = true;
+
+function debugLog(tag, data = "") {
+    if (!DEBUG_MODE) return;
+    console.log(`[${tag}]`, data);
+}
+
+// =====================================================
 // Game変数
 // =====================================================
 let clickCount = 0;
@@ -96,7 +106,6 @@ let countdown = 3;
 // レベル・結果判定
 // =====================================================
 let selectedLevel = null;
-let selectedElement = null;
 let targetCount = 0;
 let bossImageReady = false;
 let levelCleared = false;
@@ -148,76 +157,40 @@ const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 const remainingText = document.getElementById("remaining");
 const remainingCountText = document.getElementById("remainingCount");
-
-// =====================================================
-// オープニング画面
-// =====================================================
-const openingScreen = document.getElementById("levelSelect");
-const openingTitle = document.getElementById("openingTitle");
-const openingSubtitle = document.getElementById("openingSubtitle");
-const openingCountdown = document.getElementById("openingCountdown");
-const openingEmbers = document.getElementById("openingEmbers");
-
-function createOpeningEmbers(count = 34) {
-    if (!openingEmbers) return;
-
-    const fragment = document.createDocumentFragment();
-
-    for (let i = 0; i < count; i++) {
-        const ember = document.createElement("span");
-        ember.className = "openingEmber";
-
-        const size = 3 + Math.random() * 8;
-        ember.style.left = `${Math.random() * 100}%`;
-        ember.style.setProperty("--size", `${size}px`);
-        ember.style.setProperty("--duration", `${5 + Math.random() * 6}s`);
-        ember.style.setProperty("--delay", `${-Math.random() * 10}s`);
-        ember.style.setProperty("--drift", `${-90 + Math.random() * 180}px`);
-
-        fragment.appendChild(ember);
-    }
-
-    openingEmbers.appendChild(fragment);
-    console.log("[OPENING] 火の粉を生成", { count });
-}
-
-function showOpeningCount(text, isStart = false) {
-    if (!openingCountdown) {
-        showMessage(text);
-        return;
-    }
-
-    openingCountdown.classList.remove("is-visible", "is-start");
-    void openingCountdown.offsetWidth;
-    openingCountdown.textContent = text;
-    openingCountdown.classList.add("is-visible");
-
-    if (isStart) {
-        openingCountdown.classList.add("is-start");
-    }
-
-    console.log("[OPENING COUNT]", text);
-}
-
-createOpeningEmbers();
 function updateRemainingCount() {
 
-    const remaining = Math.max(targetCount - clickCount, 0);
+    if (!remainingText) return;
+
+    const remaining =
+        Math.max(targetCount - clickCount, 0);
 
     if (remaining > 0) {
 
-        remainingText.classList.remove("remainingCleared");
+        remainingText.classList.remove(
+            "remainingCleared"
+        );
 
-        remainingText.innerHTML = `
-            クリアまで あと
-            <span id="remainingCount">${remaining}</span>
-            かい
-        `;
+        const numberElement =
+            document.getElementById("remainingCount");
+
+        if (numberElement) {
+            numberElement.textContent = remaining;
+        } else {
+            remainingText.innerHTML = `
+                クリアまで あと
+                <span id="remainingCount">${remaining}</span>
+                かい
+            `;
+        }
 
     } else {
 
-        remainingText.classList.add("remainingCleared");
-        remainingText.textContent = "クリアラインたっせい！";
+        remainingText.classList.add(
+            "remainingCleared"
+        );
+
+        remainingText.textContent =
+            "クリアラインたっせい！";
     }
 }
 function showMessage(text) {
@@ -238,18 +211,83 @@ function hideMessage() {
 }
 
 // =====================================================
-// レベル選択
+// オープニング・運営用難易度設定
 // =====================================================
 const levelSelectScreen =
     document.getElementById("levelSelect");
 
-const levelButtons =
-    document.querySelectorAll(".levelButton");
+let openingTitle = null;
+let openingSubtitle = null;
+let openingCountdown = null;
+let openingSelectionLocked = false;
 
-function selectLevel(level, target) {
+function setupOpeningScreen() {
 
-    if (selectedLevel !== null) return;
+    if (!levelSelectScreen) {
+        debugLog("OPENING", "levelSelect が見つからないため通常表示で進行");
+        return;
+    }
 
+    levelSelectScreen.innerHTML = `
+        <div id="levelSelectPanel" class="openingPanel">
+            <div id="openingEmbers" aria-hidden="true"></div>
+
+            <div id="openingTitleWrap">
+                <div class="openingFlame" aria-hidden="true">🔥</div>
+                <h1 id="openingTitle">ひのぼうけん</h1>
+                <p id="openingSubtitle">はじまるよ！</p>
+            </div>
+
+            <div id="openingCountdown" aria-live="polite"></div>
+
+            <div class="staffHint">
+                運営：1・2・3キー
+            </div>
+        </div>
+    `;
+
+    openingTitle =
+        document.getElementById("openingTitle");
+
+    openingSubtitle =
+        document.getElementById("openingSubtitle");
+
+    openingCountdown =
+        document.getElementById("openingCountdown");
+
+    const emberContainer =
+        document.getElementById("openingEmbers");
+
+    if (emberContainer) {
+        for (let i = 0; i < 34; i++) {
+            const ember = document.createElement("span");
+            ember.className = "openingEmber";
+            ember.style.setProperty("--x", `${Math.random() * 100}%`);
+            ember.style.setProperty("--delay", `${Math.random() * 3}s`);
+            ember.style.setProperty("--duration", `${2.8 + Math.random() * 2.8}s`);
+            ember.style.setProperty("--size", `${3 + Math.random() * 7}px`);
+            emberContainer.appendChild(ember);
+        }
+    }
+
+    debugLog("OPENING", "タイトル画面を初期化");
+}
+
+setupOpeningScreen();
+
+function wait(milliseconds) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, milliseconds);
+    });
+}
+
+async function selectLevel(level, target) {
+
+    if (openingSelectionLocked || selectedLevel !== null) {
+        return;
+    }
+
+    openingSelectionLocked = true;
     selectedLevel = level;
     targetCount = target;
 
@@ -259,46 +297,59 @@ function selectLevel(level, target) {
     timeLeft = 15;
     timeText.textContent = timeLeft;
 
-    // タイトルを光らせ、「はじまるよ！」を表示
-    openingScreen?.classList.add("is-selected");
+    if (remainingText) {
+        remainingText.style.display = "block";
+        updateRemainingCount();
+    }
 
-    console.log("[LEVEL SELECT]", {
-        selectedLevel,
+    debugLog("LEVEL SELECT", {
+        level: selectedLevel,
         targetCount
     });
 
-    // 3D側の登場演出はタイトル画面の裏で進める
-    if (bossImageReady) {
-        startEnemyIntro();
+    if (levelSelectScreen) {
+        levelSelectScreen.classList.add("openingSelected");
     }
 
-    // 約1秒、タイトルの反応を見せてからカウントダウン
-    setTimeout(() => {
-        startCountdown();
-    }, 1000);
+    if (openingSubtitle) {
+        openingSubtitle.classList.add("isVisible");
+    }
+
+    // タイトルが光る時間
+    await wait(1000);
+
+    if (levelSelectScreen) {
+        levelSelectScreen.classList.add("countdownMode");
+    }
+
+    startCountdown();
 }
 
-// 運営専用：数字キーで難易度を設定
-// 1 = 15回 / 2 = 25回 / 3 = 35回
+// 運営が数字キーでひっそり難易度を設定する
 window.addEventListener("keydown", (event) => {
 
     if (selectedLevel !== null) return;
 
-    const keyMap = {
-        Digit1: { level: "わ", target: 15 },
-        Numpad1: { level: "わ", target: 15 },
-        Digit2: { level: "く", target: 25 },
-        Numpad2: { level: "く", target: 25 },
-        Digit3: { level: "なつ", target: 35 },
-        Numpad3: { level: "なつ", target: 35 }
-    };
+    if (
+        event.code === "Digit1" ||
+        event.code === "Numpad1"
+    ) {
+        selectLevel("わ", 15);
 
-    const selected = keyMap[event.code];
-    if (!selected) return;
+    } else if (
+        event.code === "Digit2" ||
+        event.code === "Numpad2"
+    ) {
+        selectLevel("く", 25);
 
-    event.preventDefault();
-    selectLevel(selected.level, selected.target);
+    } else if (
+        event.code === "Digit3" ||
+        event.code === "Numpad3"
+    ) {
+        selectLevel("なつ", 35);
+    }
 });
+
 
 // =====================================================
 // 元気玉
@@ -345,15 +396,11 @@ const bossTexture = bossTextureLoader.load(
             1
         );
 
-        console.log("ボス画像の比率調整完了");
+        debugLog("ASSET", "敵画像の比率調整完了");
 
         // ボス画像の読み込み完了
         bossImageReady = true;
 
-        // レベル選択済みなら登場演出を始める
-        if (selectedLevel !== null){
-             startEnemyIntro();
-        }
     }
 );
 
@@ -381,245 +428,24 @@ boss.visible = false;
 
 
 // =====================================================
-// ボスが操る火の玉
-// images/hi.png を3〜6個ランダムに表示
+// ゲーム画面準備
 // =====================================================
+function prepareGameScene() {
 
-const fireTextureLoader = new THREE.TextureLoader();
-
-const fireTexture = fireTextureLoader.load(
-    "./images/hi.png",
-    () => {
-        console.log("火の玉画像の読み込み成功！");
-    },
-    undefined,
-    (error) => {
-        console.error("火の玉画像の読み込み失敗", error);
+    if (!bossImageReady) {
+        debugLog("SCENE", "敵画像の読み込み待ち");
     }
-);
-
-const fireBalls = [];
-
-// ページを開くたびに3〜6個からランダムで決まる
-const FIRE_COUNT = THREE.MathUtils.randInt(3, 6);
-
-// 1個だけ手前へ飛び出す演出用
-let fireAttackIndex = -1;
-let fireAttackProgress = 0;
-let nextFireAttackTime =
-    performance.now() + 2000 + Math.random() * 2000;
-
-// ボス敗北後の飛び散り演出用
-let fireBallsDefeated = false;
-
-for (let i = 0; i < FIRE_COUNT; i++) {
-
-    const fireMaterial = new THREE.SpriteMaterial({
-        map: fireTexture,
-        transparent: true,
-        depthWrite: false,
-        opacity: 1,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false
-    });
-
-    const fire = new THREE.Sprite(fireMaterial);
-
-    // 外側に重ねる薄い炎。二重表示にして派手さと発光感を出す
-    const auraMaterial = new THREE.SpriteMaterial({
-        map: fireTexture,
-        transparent: true,
-        depthWrite: false,
-        opacity: 0.38,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false
-    });
-
-    const aura = new THREE.Sprite(auraMaterial);
-
-    // 以前の約2倍。画面上でしっかり存在感が出る大きさ
-    const baseScale =
-        2.6 + Math.random() * 1.2;
-
-    fire.scale.set(
-        baseScale,
-        baseScale,
-        1
-    );
-
-    aura.scale.set(
-        baseScale * 1.7,
-        baseScale * 1.7,
-        1
-    );
-
-    fire.visible = false;
-    aura.visible = false;
-
-    scene.add(aura);
-    scene.add(fire);
-
-    fireBalls.push({
-        sprite: fire,
-        aura: aura,
-
-        // 初期角度
-        angle:
-            Math.random() *
-            Math.PI *
-            2,
-
-        // 周回速度
-        speed:
-            0.45 +
-            Math.random() *
-            0.4,
-
-        // ボスからの距離
-        radius:
-            4.2 +
-            Math.random() *
-            3.8,
-
-        // ボスを基準にした高さ
-        height:
-            1.4 +
-            Math.random() *
-            4.8,
-
-        // 上下運動のタイミングをずらす
-        floatOffset:
-            Math.random() *
-            Math.PI *
-            2,
-
-        baseScale: baseScale,
-
-        // 敗北時の飛ぶ方向
-        defeatVelocity:
-            new THREE.Vector3()
-    });
-}
-
-// =====================================================
-// ボス登場演出
-// =====================================================
-
-let enemyIntroStarted = false;
-let enemyIntroFinished = false;
-let enemyIntroProgress = 0;
-let enemyBecameVisible = false;
-
-// 「敵があらわれた！」を見せる時間
-const ENEMY_INTRO_DELAY = 0.3;
-
-// 敵が登場するアニメーション時間
-const ENEMY_INTRO_DURATION = 1.2;
-
-// 登場前と登場後の位置・大きさ
-const bossIntroStartPosition = new THREE.Vector3();
-const bossIntroTargetPosition = new THREE.Vector3();
-const bossIntroTargetScale = new THREE.Vector3();
-const bossIntroStartScale = new THREE.Vector3(0.01, 0.01, 0.01);
-
-
-// =====================================================
-// ボス登場開始
-// =====================================================
-
-function startEnemyIntro() {
-
-    // 二重に始まらないようにする
-    if (enemyIntroStarted) return;
-
-    enemyIntroStarted = true;
-    enemyIntroProgress = 0;
-
-    // 通常時の位置と大きさを保存
-    bossIntroTargetPosition.copy(bossBasePosition);
-    bossIntroTargetScale.copy(boss.scale);
-
-    // 画面上から登場させる
-    bossIntroStartPosition.set(
-        bossBasePosition.x,
-        bossBasePosition.y + 5,
-        bossBasePosition.z
-    );
-
-    boss.position.copy(bossIntroStartPosition);
-
-    // 最初はとても小さくする
-    boss.scale.copy(bossIntroStartScale);
-
-    // 最初はまだ表示しない
-    boss.visible = false;
-
-    // オープニング画面の裏で静かに登場させる
-    hideMessage();
-}
-
-
-// =====================================================
-// ボス登場アニメーション
-// =====================================================
-function updateEnemyIntro(deltaSeconds) {
-
-    if (!enemyIntroStarted) return;
-    if (enemyIntroFinished) return;
-
-    enemyIntroProgress += deltaSeconds;
-
-    // 最初は「敵があらわれた！」だけ表示
-    if (enemyIntroProgress < ENEMY_INTRO_DELAY) {
-        return;
-    }
-
-    // 敵が見え始める瞬間に文字を消す
-    if (!enemyBecameVisible) {
-        enemyBecameVisible = true;
-        boss.visible = true;
-        hideMessage();
-    }
-
-    const animationTime =
-        enemyIntroProgress - ENEMY_INTRO_DELAY;
-
-    const progress = Math.min(
-        animationTime / ENEMY_INTRO_DURATION,
-        1
-    );
-
-    const easedProgress =
-        1 - Math.pow(1 - progress, 3);
-
-    boss.position.lerpVectors(
-        bossIntroStartPosition,
-        bossIntroTargetPosition,
-        easedProgress
-    );
-
-    boss.scale.lerpVectors(
-        bossIntroStartScale,
-        bossIntroTargetScale,
-        easedProgress
-    );
-
-    boss.material.rotation =
-        Math.sin(progress * Math.PI * 4) *
-        (1 - progress) *
-        0.25;
-
-   if (progress >= 1) {
-
-    enemyIntroFinished = true;
 
     boss.position.copy(bossBasePosition);
-    boss.scale.copy(bossIntroTargetScale);
     boss.material.rotation = 0;
+    boss.visible = true;
 
-    console.log("[ENEMY INTRO] 登場演出完了");
+    spiritBall.visible = true;
+
+    debugLog("SCENE", "ゲーム画面を表示");
 }
-}
+
+
 // =====================================================
 // 爆発の中心光
 // =====================================================
@@ -804,9 +630,6 @@ window.addEventListener("keydown", (event) => {
 
     if (event.code !== "Enter") return;
 
-    // ボス登場が終わるまでは操作できない
-    if (!enemyIntroFinished) return;
-
     // 長押し無効
     if (event.repeat) return;
 
@@ -827,6 +650,19 @@ startSE.volume = 1.0;
 // =====================================================
 // カウントダウン
 // =====================================================
+function setCountdownDisplay(text) {
+
+    if (openingCountdown && levelSelectScreen) {
+        openingCountdown.textContent = text;
+        openingCountdown.classList.remove("countdownPop");
+        void openingCountdown.offsetWidth;
+        openingCountdown.classList.add("countdownPop");
+        return;
+    }
+
+    showMessage(text);
+}
+
 function startCountdown() {
 
     if (isCountingDown || gameStarted) return;
@@ -834,9 +670,8 @@ function startCountdown() {
     isCountingDown = true;
     countdown = 3;
 
-    openingScreen?.classList.add("is-counting");
+    prepareGameScene();
 
-    // 音を最初から再生
     startSE.pause();
     startSE.currentTime = 0;
 
@@ -844,51 +679,58 @@ function startCountdown() {
 
     if (playPromise !== undefined) {
         playPromise.catch((error) => {
-            console.error("[AUDIO ERROR] スタート音を再生できませんでした", error);
+            debugLog("AUDIO ERROR", error);
         });
     }
 
-    showOpeningCount("3");
+    debugLog("COUNTDOWN", "開始");
+
+    setCountdownDisplay("3");
 
     setTimeout(() => {
         if (!isCountingDown) return;
         countdown = 2;
-        showOpeningCount("2");
+        setCountdownDisplay("2");
     }, 1000);
 
     setTimeout(() => {
         if (!isCountingDown) return;
         countdown = 1;
-        showOpeningCount("1");
+        setCountdownDisplay("1");
     }, 2000);
 
     setTimeout(() => {
         if (!isCountingDown) return;
-        showOpeningCount("START!!", true);
-    }, 3000);
 
-    // START!!を約0.6秒見せてからゲーム開始
-    setTimeout(() => {
-        if (!isCountingDown) return;
-
-        openingScreen?.classList.add("is-leaving");
-        remainingText.style.display = "block";
-        updateRemainingCount();
+        setCountdownDisplay("START!!");
         startGame();
 
-        setTimeout(() => {
-            if (openingScreen) {
-                openingScreen.style.display = "none";
-            }
-        }, 650);
-    }, 3600);
+        debugLog("COUNTDOWN", "START");
+    }, 3100);
+
+    // START!!を0.6秒表示してからオープニングを消す
+    setTimeout(() => {
+
+        if (levelSelectScreen) {
+            levelSelectScreen.classList.add("openingFinished");
+
+            setTimeout(() => {
+                levelSelectScreen.style.display = "none";
+            }, 350);
+        }
+
+        hideMessage();
+
+    }, 3700);
 }
+
 // =====================================================
 // ゲーム開始
 // =====================================================
 function startGame() {
 
     gameStarted = true;
+    debugLog("GAME", "開始");
     isCountingDown = false;
 
     timeLeft = 15;
@@ -1040,7 +882,7 @@ function updateLaunch(deltaSeconds) {
         spiritBall.position.z =
             boss.position.z + 1;
 
-        console.log("元気玉が命中！");
+        debugLog("HIT", "元気玉が命中");
 
         if (levelCleared) {
 
@@ -1175,9 +1017,6 @@ function updateExplosion(deltaSeconds) {
 
         spiritBall.visible = false;
 
-        // ボスの敗北に合わせて火の玉を飛び散らせる
-        startFireBallDefeat();
-
         explosion.visible = true;
         explosion.position.copy(spiritBall.position);
         explosionMaterial.opacity = 1;
@@ -1220,7 +1059,7 @@ function updateExplosion(deltaSeconds) {
             );
         });
 
-        console.log("ドカーン！！");
+        debugLog("EXPLOSION", resultRank);
 
         isShake = true;
     }
@@ -1460,7 +1299,7 @@ function updateBossFly(deltaSeconds) {
         // 星キラーン演出へ
         startStarEffect();
 
-        console.log("ラスボス吹っ飛び終了！");
+        debugLog("ENEMY FLY", "終了");
     }
 }
 
@@ -1574,14 +1413,13 @@ let gameClearStarted = false;
 function hideStatusPanel() {
     // よく使われる候補IDを順番に探す。
     const statusCandidates = [
-        "info",
-        "status",
-        "statusPanel",
-        "gameStatus",
-        "hud",
-        "infoPanel"
-    ];
-
+    "info",
+    "status",
+    "statusPanel",
+    "gameStatus",
+    "hud",
+    "infoPanel"
+];
     for (const id of statusCandidates) {
         const element = document.getElementById(id);
         if (element) {
@@ -1782,354 +1620,6 @@ function updateBossIdle() {
 
 
 // =====================================================
-// ボスが操る火の玉の更新
-// =====================================================
-
-function updateFireBalls(deltaSeconds) {
-
-    // ボス敗北後は飛び散り専用の動きに切り替える
-    if (fireBallsDefeated) {
-        updateDefeatedFireBalls(deltaSeconds);
-        return;
-    }
-
-    // 登場前・敗北演出中・消滅後は表示しない
-    if (
-        !boss.visible ||
-        !enemyIntroFinished ||
-        isExplosion ||
-        bossFlying ||
-        showStar ||
-        gameClear
-    ) {
-
-        for (const fireBall of fireBalls) {
-            fireBall.sprite.visible = false;
-            fireBall.aura.visible = false;
-        }
-
-        return;
-    }
-
-    const currentTime =
-        performance.now();
-
-    const time =
-        currentTime * 0.001;
-
-    // 2〜4秒ごとにランダムな1個を手前へ飛び出させる
-    if (
-        fireAttackIndex === -1 &&
-        currentTime >= nextFireAttackTime
-    ) {
-
-        fireAttackIndex =
-            Math.floor(
-                Math.random() *
-                fireBalls.length
-            );
-
-        fireAttackProgress = 0;
-    }
-
-    fireBalls.forEach(
-        (fireBall, index) => {
-
-            const fire =
-                fireBall.sprite;
-
-            const aura =
-                fireBall.aura;
-
-            fire.visible = true;
-            aura.visible = true;
-
-            fireBall.angle +=
-                fireBall.speed *
-                deltaSeconds;
-
-            // 少しだけ軌道を伸び縮みさせる
-            const breathingRadius =
-                fireBall.radius +
-                Math.sin(
-                    time * 1.8 +
-                    fireBall.floatOffset
-                ) *
-                0.24;
-
-            let x =
-                boss.position.x +
-                Math.cos(
-                    fireBall.angle
-                ) *
-                breathingRadius;
-
-            let y =
-                boss.position.y +
-                fireBall.height +
-                Math.sin(
-                    time * 2.8 +
-                    fireBall.floatOffset
-                ) *
-                0.38;
-
-            let z =
-                boss.position.z +
-                Math.sin(
-                    fireBall.angle
-                ) *
-                2.2;
-
-            // 選ばれた1個だけ、カメラ側へ飛び出して戻る
-            if (index === fireAttackIndex) {
-
-                fireAttackProgress +=
-                    deltaSeconds * 1.15;
-
-                const progress =
-                    Math.min(
-                        fireAttackProgress,
-                        1
-                    );
-
-                // 0 → 1 → 0 の動き
-                const attackAmount =
-                    Math.sin(
-                        progress *
-                        Math.PI
-                    );
-
-                z +=
-                    attackAmount *
-                    4.8;
-
-                y +=
-                    attackAmount *
-                    0.6;
-
-                const attackScale =
-                    fireBall.baseScale +
-                    attackAmount *
-                    2.8;
-
-                fire.scale.set(
-                    attackScale,
-                    attackScale,
-                    1
-                );
-
-                aura.scale.set(
-                    attackScale * 1.9,
-                    attackScale * 1.9,
-                    1
-                );
-
-                aura.material.opacity =
-                    0.38 + attackAmount * 0.32;
-
-                if (progress >= 1) {
-
-                    fireAttackIndex = -1;
-                    fireAttackProgress = 0;
-
-                    nextFireAttackTime =
-                        performance.now() +
-                        2000 +
-                        Math.random() *
-                        2000;
-                }
-
-            } else {
-
-                // 普段も少し脈打たせる
-                const pulseScale =
-                    fireBall.baseScale +
-                    Math.sin(
-                        time * 4.8 +
-                        fireBall.floatOffset
-                    ) *
-                    0.32;
-
-                fire.scale.set(
-                    pulseScale,
-                    pulseScale,
-                    1
-                );
-
-                const auraPulse =
-                    pulseScale *
-                    (
-                        1.42 +
-                        Math.sin(
-                            time * 3.2 +
-                            fireBall.floatOffset
-                        ) *
-                        0.08
-                    );
-
-                aura.scale.set(
-                    auraPulse,
-                    auraPulse,
-                    1
-                );
-
-                aura.material.opacity =
-                    0.30 +
-                    (
-                        Math.sin(
-                            time * 4 +
-                            fireBall.floatOffset
-                        ) +
-                        1
-                    ) *
-                    0.08;
-            }
-
-            // 奥にある火の玉は少し小さく、手前は大きくして遠近感を出す
-            const depthScale =
-                THREE.MathUtils.clamp(
-                    1.15 - (z - boss.position.z) * 0.08,
-                    0.72,
-                    1.45
-                );
-
-            fire.scale.multiplyScalar(depthScale);
-            aura.scale.multiplyScalar(depthScale);
-
-            fire.position.set(
-                x,
-                y,
-                z
-            );
-
-            aura.position.set(
-                x,
-                y,
-                z - 0.03
-            );
-
-            // 炎そのものが左右に揺れているように見せる
-            fire.material.rotation =
-                Math.sin(
-                    time * 3.2 +
-                    fireBall.floatOffset
-                ) *
-                0.18;
-
-            // 外側の炎は逆方向へ少し大きく揺らす
-            aura.material.rotation =
-                -Math.sin(
-                    time * 2.6 +
-                    fireBall.floatOffset
-                ) *
-                0.24;
-        }
-    );
-}
-
-
-// =====================================================
-// ボス敗北時：火の玉が制御を失って飛び散る
-// =====================================================
-
-function startFireBallDefeat() {
-
-    if (fireBallsDefeated) return;
-
-    fireBallsDefeated = true;
-
-    fireAttackIndex = -1;
-    fireAttackProgress = 0;
-
-    for (const fireBall of fireBalls) {
-
-        const fire =
-            fireBall.sprite;
-
-        const aura =
-            fireBall.aura;
-
-        fire.visible = true;
-        aura.visible = true;
-
-        fire.material.opacity = 1;
-        aura.material.opacity = 0.5;
-
-        // それぞれ違う方向へ勢いよく飛び散る
-        fireBall.defeatVelocity.set(
-            (Math.random() - 0.5) * 5,
-            2 + Math.random() * 4,
-            1 + Math.random() * 4
-        );
-    }
-}
-
-
-function updateDefeatedFireBalls(
-    deltaSeconds
-) {
-
-    for (const fireBall of fireBalls) {
-
-        const fire =
-            fireBall.sprite;
-
-        const aura =
-            fireBall.aura;
-
-        if (!fire.visible) continue;
-
-        fire.position.addScaledVector(
-            fireBall.defeatVelocity,
-            deltaSeconds
-        );
-
-        aura.position.copy(fire.position);
-
-        // 重力のように少しずつ下へ落とす
-        fireBall.defeatVelocity.y -=
-            2.5 *
-            deltaSeconds;
-
-        fire.material.rotation +=
-            4.5 *
-            deltaSeconds;
-
-        aura.material.rotation -=
-            3.5 *
-            deltaSeconds;
-
-        const shrink =
-            Math.pow(
-                0.95,
-                deltaSeconds *
-                FPS_BASE
-            );
-
-        fire.scale.multiplyScalar(shrink);
-        aura.scale.multiplyScalar(shrink);
-
-        fire.material.opacity -=
-            1.4 *
-            deltaSeconds;
-
-        aura.material.opacity -=
-            0.9 *
-            deltaSeconds;
-
-        if (
-            fire.material.opacity <= 0 ||
-            fire.scale.x <= 0.05
-        ) {
-
-            fire.visible = false;
-            aura.visible = false;
-        }
-    }
-}
-
-
-// =====================================================
 // Resize
 // =====================================================
 window.addEventListener("resize", () => {
@@ -2166,16 +1656,10 @@ function animate() {
     updateSpiritBall(deltaSeconds);
     
 
-    // ボス登場演出
-    updateEnemyIntro(deltaSeconds);
-
-    // 登場後のみ通常のふわふわ動作
-    if (enemyIntroFinished) {
+    // 表示中の敵をふわふわ動かす
+    if (boss.visible) {
         updateBossIdle();
     }
-
-    // ボスの位置更新後に火の玉を追従させる
-    updateFireBalls(deltaSeconds);
 
     updateLaunch(deltaSeconds);
     updateReflectedBall(deltaSeconds);
@@ -2183,7 +1667,7 @@ function animate() {
     updateExplosion(deltaSeconds);
 
     updateCameraShake();
-    updateBossFly(deltaSeconds);
+    updateBossFly(deltaSeaconds);
     updateStar(deltaSeconds);
     updateGameClear();
     updateConfetti(deltaSeconds);
@@ -2193,6 +1677,4 @@ function animate() {
 // =====================================================
 // Start
 // =====================================================
-console.log("[GAME INIT] ひのぼうけんを初期化しました");
-console.log("[STAFF CONTROL] 1=15回 / 2=25回 / 3=35回");
 animate();
