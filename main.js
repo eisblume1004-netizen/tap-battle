@@ -12,7 +12,7 @@ const scene = new THREE.Scene();
 
 const backgroundLoader = new THREE.TextureLoader();
 
-backgroundLoader.load(
+//backgroundLoader.load(
     "./images/background2.png",
 
     (texture) => {
