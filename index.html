@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
-    <title>ジャングル元気玉ゲーム</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ひのぼうけん</title>
 
     <script type="importmap">
     {
@@ -15,125 +15,56 @@
 
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
     <div id="creatorCard">
-        <div class="creatorYear">
-            2026年 わく夏
-        </div>
-
-        <div class="creatorName">
-            伊藤ゼミ作成
-        </div>
+        <div class="creatorYear">2026年 わく夏</div>
+        <div class="creatorName">伊藤ゼミ作成</div>
     </div>
 
-    <!-- 残り時間・連打数 -->
     <div id="info">
-
         <div class="infoItem">
-            <span class="infoLabel">
-                のこり
-            </span>
-
+            <span class="infoLabel">のこり</span>
             <div class="infoValue">
                 <span id="time">15</span>
-                <span class="infoUnit">
-                    びょう
-                </span>
+                <span class="infoUnit">びょう</span>
             </div>
         </div>
 
         <div class="infoDivider"></div>
 
         <div class="infoItem">
-            <span class="infoLabel">
-                れんだ
-            </span>
-
+            <span class="infoLabel">れんだ</span>
             <div class="infoValue">
                 <span id="count">0</span>
-                <span class="infoUnit">
-                    かい
-                </span>
+                <span class="infoUnit">かい</span>
             </div>
         </div>
-
     </div>
+
     <div id="remaining">
-
-    <span id="remainingTitle">
         クリアまで あと
-    </span>
-
-    <span id="remainingCount">
-        0
-    </span>
-
-    <span id="remainingUnit">
+        <span id="remainingCount">0</span>
         かい
-    </span>
+    </div>
 
-</div> 
-     
     <div id="message"></div>
 
-    <!-- レベル選択 -->
-    <div id="levelSelect">
+    <!-- 子どもにはタイトル画面、運営は数字キーで難易度を設定 -->
+    <div id="levelSelect" class="openingScreen">
+        <div class="openingShade"></div>
+        <div id="openingGlow" class="openingGlow"></div>
+        <div id="openingEmbers" class="openingEmbers" aria-hidden="true"></div>
 
-        <div id="levelSelectPanel">
-
-            <h1>
-                レベルをえらんでね！
-            </h1>
-
-            <p class="levelDescription">
-                15びょうでボタンをたくさんおそう！
-            </p>
-
-            <div id="levelButtons">
-
-                <button
-                    type="button"
-                    class="levelButton"
-                    data-level="わ"
-                    data-target="15"
-                >
-                    <span class="levelName">
-                        わ
-                    </span>
-                </button>
-
-                <button
-                    type="button"
-                    class="levelButton"
-                    data-level="く"
-                    data-target="25"
-                >
-                    <span class="levelName">
-                        く
-                    </span>
-                </button>
-
-                <button
-                    type="button"
-                    class="levelButton"
-                    data-level="なつ"
-                    data-target="35"
-                >
-                    <span class="levelName">
-                        なつ
-                    </span>
-                </button>
-
-            </div>
+        <div id="levelSelectPanel" class="openingPanel">
+            <div class="openingFlame" aria-hidden="true">🔥</div>
+            <h1 id="openingTitle" class="openingTitle">ひのぼうけん</h1>
+            <p id="openingSubtitle" class="openingSubtitle">はじまるよ！</p>
+            <div id="openingCountdown" class="openingCountdown" aria-live="polite"></div>
         </div>
+
+        <div class="staffHint">運営：1・2・3キー</div>
     </div>
 
-    <script
-        type="module"
-        src="main.js"
-    ></script>
-
+    <script type="module" src="main.js"></script>
 </body>
 </html>

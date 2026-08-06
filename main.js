@@ -12,7 +12,7 @@ const scene = new THREE.Scene();
 
 const backgroundLoader = new THREE.TextureLoader();
 
-//backgroundLoader.load(
+backgroundLoader.load(
     "./images/background2.png",
 
     (texture) => {
@@ -148,39 +148,76 @@ const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 const remainingText = document.getElementById("remaining");
 const remainingCountText = document.getElementById("remainingCount");
-function updateRemainingCount(){
 
-    const remaining =
-        Math.max(targetCount-clickCount,0);
+// =====================================================
+// オープニング画面
+// =====================================================
+const openingScreen = document.getElementById("levelSelect");
+const openingTitle = document.getElementById("openingTitle");
+const openingSubtitle = document.getElementById("openingSubtitle");
+const openingCountdown = document.getElementById("openingCountdown");
+const openingEmbers = document.getElementById("openingEmbers");
 
-    if(remaining>0){
+function createOpeningEmbers(count = 34) {
+    if (!openingEmbers) return;
 
-        remainingText.classList.remove(
-            "remainingCleared"
-        );
+    const fragment = document.createDocumentFragment();
 
-        remainingCountText.textContent =
-            remaining;
+    for (let i = 0; i < count; i++) {
+        const ember = document.createElement("span");
+        ember.className = "openingEmber";
 
-    }else{
+        const size = 3 + Math.random() * 8;
+        ember.style.left = `${Math.random() * 100}%`;
+        ember.style.setProperty("--size", `${size}px`);
+        ember.style.setProperty("--duration", `${5 + Math.random() * 6}s`);
+        ember.style.setProperty("--delay", `${-Math.random() * 10}s`);
+        ember.style.setProperty("--drift", `${-90 + Math.random() * 180}px`);
 
-        remainingText.classList.add(
-            "remainingCleared"
-        );
+        fragment.appendChild(ember);
+    }
 
-        remainingText.innerHTML=
-        `
-        <span id="remainingTitle">
-            🎉
-        </span>
+    openingEmbers.appendChild(fragment);
+    console.log("[OPENING] 火の粉を生成", { count });
+}
 
-        <span style="
-            font-size:34px;
-            color:#fff36b;
-        ">
-            クリアライン<br>たっせい！！
-        </span>
+function showOpeningCount(text, isStart = false) {
+    if (!openingCountdown) {
+        showMessage(text);
+        return;
+    }
+
+    openingCountdown.classList.remove("is-visible", "is-start");
+    void openingCountdown.offsetWidth;
+    openingCountdown.textContent = text;
+    openingCountdown.classList.add("is-visible");
+
+    if (isStart) {
+        openingCountdown.classList.add("is-start");
+    }
+
+    console.log("[OPENING COUNT]", text);
+}
+
+createOpeningEmbers();
+function updateRemainingCount() {
+
+    const remaining = Math.max(targetCount - clickCount, 0);
+
+    if (remaining > 0) {
+
+        remainingText.classList.remove("remainingCleared");
+
+        remainingText.innerHTML = `
+            クリアまで あと
+            <span id="remainingCount">${remaining}</span>
+            かい
         `;
+
+    } else {
+
+        remainingText.classList.add("remainingCleared");
+        remainingText.textContent = "クリアラインたっせい！";
     }
 }
 function showMessage(text) {
@@ -219,50 +256,49 @@ function selectLevel(level, target) {
     clickCount = 0;
     countText.textContent = clickCount;
 
-    remainingText.style.display = "block";
-    updateRemainingCount();
-
     timeLeft = 15;
     timeText.textContent = timeLeft;
 
-    if (levelSelectScreen) {
-        levelSelectScreen.style.display = "none";
-    }
+    // タイトルを光らせ、「はじまるよ！」を表示
+    openingScreen?.classList.add("is-selected");
 
-    console.log("選択レベル：" + selectedLevel);
-    console.log("目標連打数：" + targetCount);
+    console.log("[LEVEL SELECT]", {
+        selectedLevel,
+        targetCount
+    });
 
+    // 3D側の登場演出はタイトル画面の裏で進める
     if (bossImageReady) {
         startEnemyIntro();
     }
 
+    // 約1秒、タイトルの反応を見せてからカウントダウン
+    setTimeout(() => {
+        startCountdown();
+    }, 1000);
 }
 
-levelButtons.forEach((button) => {
-
-    button.addEventListener("click", () => {
-
-        const level = button.dataset.level;
-        const target = Number(button.dataset.target);
-
-        selectLevel(level, target);
-    });
-});
-
-// A・B・Cキーでもレベルを選べる
+// 運営専用：数字キーで難易度を設定
+// 1 = 15回 / 2 = 25回 / 3 = 35回
 window.addEventListener("keydown", (event) => {
 
     if (selectedLevel !== null) return;
 
-    if (event.code === "Keyわ") {
-        selectLevel("わ", 15);
-    } else if (event.code === "Keyく") {
-        selectLevel("く", 25);
-    } else if (event.code === "Keyなつ") {
-        selectLevel("なつ", 35);
-    }
-});
+    const keyMap = {
+        Digit1: { level: "わ", target: 15 },
+        Numpad1: { level: "わ", target: 15 },
+        Digit2: { level: "く", target: 25 },
+        Numpad2: { level: "く", target: 25 },
+        Digit3: { level: "なつ", target: 35 },
+        Numpad3: { level: "なつ", target: 35 }
+    };
 
+    const selected = keyMap[event.code];
+    if (!selected) return;
+
+    event.preventDefault();
+    selectLevel(selected.level, selected.target);
+});
 
 // =====================================================
 // 元気玉
@@ -518,7 +554,8 @@ function startEnemyIntro() {
     // 最初はまだ表示しない
     boss.visible = false;
 
-    showMessage("てきがあらわれた！");
+    // オープニング画面の裏で静かに登場させる
+    hideMessage();
 }
 
 
@@ -580,10 +617,7 @@ function updateEnemyIntro(deltaSeconds) {
     boss.scale.copy(bossIntroTargetScale);
     boss.material.rotation = 0;
 
-    // 少し待ってから自動でカウントダウン開始
-    setTimeout(() => {
-        startCountdown();
-    }, 500);
+    console.log("[ENEMY INTRO] 登場演出完了");
 }
 }
 // =====================================================
@@ -800,6 +834,8 @@ function startCountdown() {
     isCountingDown = true;
     countdown = 3;
 
+    openingScreen?.classList.add("is-counting");
+
     // 音を最初から再生
     startSE.pause();
     startSE.currentTime = 0;
@@ -807,56 +843,45 @@ function startCountdown() {
     const playPromise = startSE.play();
 
     if (playPromise !== undefined) {
-
         playPromise.catch((error) => {
-            console.error(
-                "スタート音を再生できませんでした",
-                error
-            );
+            console.error("[AUDIO ERROR] スタート音を再生できませんでした", error);
         });
     }
 
-    // 最初の「ピッ」
-    showMessage("3");
+    showOpeningCount("3");
 
-    // 2回目の「ピッ」
     setTimeout(() => {
-
         if (!isCountingDown) return;
-
         countdown = 2;
-        showMessage("2");
-
+        showOpeningCount("2");
     }, 1000);
 
-    // 3回目の「ピッ」
     setTimeout(() => {
-
         if (!isCountingDown) return;
-
         countdown = 1;
-        showMessage("1");
-
+        showOpeningCount("1");
     }, 2000);
 
-    // 長い「ピー！」が始まる瞬間
     setTimeout(() => {
+        if (!isCountingDown) return;
+        showOpeningCount("START!!", true);
+    }, 3000);
 
+    // START!!を約0.6秒見せてからゲーム開始
+    setTimeout(() => {
         if (!isCountingDown) return;
 
-        showMessage("スタート！");
-
-        // ピー！と同時にゲーム開始
+        openingScreen?.classList.add("is-leaving");
+        remainingText.style.display = "block";
+        updateRemainingCount();
         startGame();
 
-    }, 3100);
-
-    // スタートの文字だけ少し後に消す
-    setTimeout(() => {
-
-        hideMessage();
-
-    }, 3900);
+        setTimeout(() => {
+            if (openingScreen) {
+                openingScreen.style.display = "none";
+            }
+        }, 650);
+    }, 3600);
 }
 // =====================================================
 // ゲーム開始
@@ -1548,14 +1573,14 @@ let gameClearStarted = false;
 
 function hideStatusPanel() {
     // よく使われる候補IDを順番に探す。
-   const statusCandidates = [
-    "info",
-    "status",
-    "statusPanel",
-    "gameStatus",
-    "hud",
-    "infoPanel"
-];
+    const statusCandidates = [
+        "info",
+        "status",
+        "statusPanel",
+        "gameStatus",
+        "hud",
+        "infoPanel"
+    ];
 
     for (const id of statusCandidates) {
         const element = document.getElementById(id);
@@ -2168,4 +2193,6 @@ function animate() {
 // =====================================================
 // Start
 // =====================================================
+console.log("[GAME INIT] ひのぼうけんを初期化しました");
+console.log("[STAFF CONTROL] 1=15回 / 2=25回 / 3=35回");
 animate();
