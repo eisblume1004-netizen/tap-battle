@@ -248,7 +248,6 @@ function setupOpeningScreen() {
             <div id="openingTitleWrap">
                 <div class="openingFlame" aria-hidden="true">🔥</div>
                 <h1 id="openingTitle">ひのぼうけん</h1>
-                <p id="openingSubtitle">はじまるよ！</p>
             </div>
 
             <div id="openingBurst" aria-hidden="true"></div>
@@ -261,9 +260,6 @@ function setupOpeningScreen() {
 
     openingTitle =
         document.getElementById("openingTitle");
-
-    openingSubtitle =
-        document.getElementById("openingSubtitle");
 
     openingCountdown =
         document.getElementById("openingCountdown");
@@ -325,9 +321,6 @@ async function selectLevel(level, target) {
     if (levelSelectScreen) {
         levelSelectScreen.classList.add("openingSelected");
     }
-
-    if (openingSubtitle) {
-        openingSubtitle.classList.add("isVisible");
     }
 
     // タイトルが強く光り、「はじまるよ！」を見せる時間
