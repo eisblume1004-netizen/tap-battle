@@ -148,24 +148,39 @@ const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 const remainingText = document.getElementById("remaining");
 const remainingCountText = document.getElementById("remainingCount");
-function updateRemainingCount() {
+function updateRemainingCount(){
 
-    const remaining = Math.max(targetCount - clickCount, 0);
+    const remaining =
+        Math.max(targetCount-clickCount,0);
 
-    if (remaining > 0) {
+    if(remaining>0){
 
-        remainingText.classList.remove("remainingCleared");
+        remainingText.classList.remove(
+            "remainingCleared"
+        );
 
-        remainingText.innerHTML = `
-            クリアまで あと
-            <span id="remainingCount">${remaining}</span>
-            かい
+        remainingCountText.textContent =
+            remaining;
+
+    }else{
+
+        remainingText.classList.add(
+            "remainingCleared"
+        );
+
+        remainingText.innerHTML=
+        `
+        <span id="remainingTitle">
+            🎉
+        </span>
+
+        <span style="
+            font-size:34px;
+            color:#fff36b;
+        ">
+            クリアライン<br>たっせい！！
+        </span>
         `;
-
-    } else {
-
-        remainingText.classList.add("remainingCleared");
-        remainingText.textContent = "クリアラインたっせい！";
     }
 }
 function showMessage(text) {
