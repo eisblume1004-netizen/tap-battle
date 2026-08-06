@@ -47,23 +47,10 @@
         かい
     </div>
 
-    <div id="message"></div>
+    <div id="message" aria-live="polite"></div>
 
-    <!-- 子どもにはタイトル画面、運営は数字キーで難易度を設定 -->
-    <div id="levelSelect" class="openingScreen">
-        <div class="openingShade"></div>
-        <div id="openingGlow" class="openingGlow"></div>
-        <div id="openingEmbers" class="openingEmbers" aria-hidden="true"></div>
-
-        <div id="levelSelectPanel" class="openingPanel">
-            <div class="openingFlame" aria-hidden="true">🔥</div>
-            <h1 id="openingTitle" class="openingTitle">ひのぼうけん</h1>
-            <p id="openingSubtitle" class="openingSubtitle">はじまるよ！</p>
-            <div id="openingCountdown" class="openingCountdown" aria-live="polite"></div>
-        </div>
-
-        <div class="staffHint">運営：1・2・3キー</div>
-    </div>
+    <!-- 中身は main.js が自動生成します -->
+    <div id="levelSelect"></div>
 
     <script type="module" src="main.js"></script>
 </body>

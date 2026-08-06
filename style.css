@@ -1,12 +1,26 @@
+:root {
+    --gold: #ffe066;
+    --gold-light: #fff6a6;
+    --brown: #6d3300;
+    --panel-top: rgba(35, 48, 80, 0.95);
+    --panel-bottom: rgba(5, 10, 25, 0.95);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
 body {
     margin: 0;
     overflow: hidden;
-    font-family: sans-serif;
-
-    background-color: #000;
-
-    width: 100vw;
-    height: 100vh;
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+    background: #000;
 }
 
 canvas {
@@ -14,46 +28,33 @@ canvas {
 }
 
 /* =====================================================
-   元気玉の下に表示する
-   残り時間・連打数
+   ゲーム中の情報パネル
 ===================================================== */
-
 #info {
     position: fixed;
-
     left: 50%;
-    bottom: 30px;
-
+    bottom: 28px;
     transform: translateX(-50%);
 
     display: flex;
     align-items: center;
     justify-content: center;
-
     gap: 28px;
 
-    min-width: 340px;
+    min-width: 360px;
     padding: 12px 30px;
 
-    color: white;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(35, 48, 80, 0.93),
-            rgba(5, 10, 25, 0.93)
-        );
-
-    border: 4px solid #ffe066;
+    color: #fff;
+    background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+    border: 4px solid var(--gold);
     border-radius: 24px;
 
     box-shadow:
-        0 0 0 4px rgba(92, 45, 0, 0.85),
-        0 0 20px rgba(255, 224, 102, 0.8),
-        0 10px 25px rgba(0, 0, 0, 0.55);
+        0 0 0 4px rgba(92, 45, 0, 0.86),
+        0 0 22px rgba(255, 224, 102, 0.85),
+        0 10px 28px rgba(0, 0, 0, 0.58);
 
     z-index: 150;
-
     pointer-events: none;
 }
 
@@ -61,673 +62,68 @@ canvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-
-    min-width: 120px;
+    min-width: 125px;
 }
 
 .infoLabel {
     margin-bottom: 1px;
-
     color: #fff3a3;
-
     font-size: 17px;
     font-weight: 900;
     letter-spacing: 2px;
-
-    text-shadow:
-        2px 2px 0 #6c3500,
-        0 0 8px rgba(255, 210, 50, 0.8);
+    text-shadow: 2px 2px 0 #6c3500, 0 0 8px rgba(255, 210, 50, 0.8);
 }
 
 .infoValue {
     display: flex;
     align-items: baseline;
     justify-content: center;
-
     line-height: 1;
 }
 
 #time,
 #count {
-    color: #ffffff;
-
+    color: #fff;
     font-size: clamp(42px, 5vw, 67px);
     font-weight: 900;
-
-    -webkit-text-stroke: 2px #6d3300;
-
-    text-shadow:
-        0 0 8px #fff59d,
-        0 0 17px #ffb300,
-        3px 3px 0 #6d3300;
+    -webkit-text-stroke: 2px var(--brown);
+    text-shadow: 0 0 8px #fff59d, 0 0 17px #ffb300, 3px 3px 0 var(--brown);
 }
 
 .infoUnit {
     margin-left: 5px;
-
-    color: #ffe066;
-
+    color: var(--gold);
     font-size: 25px;
     font-weight: 900;
-
-    text-shadow:
-        2px 2px 0 #6d3300;
+    text-shadow: 2px 2px 0 var(--brown);
 }
 
 .infoDivider {
     width: 3px;
     height: 60px;
-
-    background:
-        linear-gradient(
-            transparent,
-            #ffe066,
-            transparent
-        );
-
-    box-shadow:
-        0 0 8px #ffb300;
-}
-
-/* =====================================================
-   中央メッセージ
-   READY・START・TIME UP・GAME CLEARなど
-===================================================== */
-
-#message {
-    position: fixed;
-
-    left: 50%;
-    top: 50%;
-
-    transform: translate(-50%, -50%);
-
-    color: #ffe066;
-
-    font-family: sans-serif;
-    font-size: clamp(48px, 9vw, 120px);
-    font-weight: 900;
-
-    letter-spacing: 2px;
-    white-space: pre-line;
-    text-align: center;
-
-    -webkit-text-stroke: 3px #7a3b00;
-
-    text-shadow:
-        0 0 12px #fff59d,
-        0 0 30px #ffb300,
-        3px 3px 0 #7a3b00,
-        -3px 3px 0 #7a3b00,
-        3px -3px 0 #7a3b00,
-        -3px -3px 0 #7a3b00,
-        0 8px 18px rgba(0, 0, 0, 0.6);
-
-    z-index: 200;
-
-    display: none;
-
-    pointer-events: none;
-
-    animation:
-        messagePopIn 0.35s
-        cubic-bezier(0.2, 1.6, 0.4, 1);
-}
-
-@keyframes messagePopIn {
-    0% {
-        opacity: 0;
-
-        transform:
-            translate(-50%, -50%)
-            scale(0.4);
-    }
-
-    60% {
-        opacity: 1;
-
-        transform:
-            translate(-50%, -50%)
-            scale(1.15);
-    }
-
-    100% {
-        opacity: 1;
-
-        transform:
-            translate(-50%, -50%)
-            scale(1);
-    }
-}
-
-/* =====================================================
-   レベル選択画面
-===================================================== */
-
-#levelSelect {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 1000;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    background: rgba(0, 0, 0, 0.68);
-}
-
-#levelSelectPanel {
-    width: min(850px, 90%);
-
-    padding: 35px;
-
-    text-align: center;
-
-    background: rgba(255, 255, 255, 0.96);
-
-    border: 6px solid #ffd447;
-    border-radius: 30px;
-
-    box-shadow:
-        0 0 0 6px rgba(117, 67, 0, 0.8),
-        0 15px 40px rgba(0, 0, 0, 0.5);
-}
-
-#levelSelectPanel h1 {
-    margin: 0 0 10px;
-
-    font-size: clamp(32px, 5vw, 60px);
-
-    color: #8a4c00;
-
-    text-shadow:
-        2px 2px 0 #ffd447;
-}
-
-.levelDescription {
-    margin: 0 0 25px;
-
-    font-size: clamp(18px, 2.5vw, 28px);
-    font-weight: bold;
-
-    color: #333;
-}
-
-#levelButtons {
-    display: flex;
-    justify-content: center;
-
-    gap: 20px;
-}
-
-.levelButton {
-    width: 220px;
-    min-height: 210px;
-
-    padding: 18px;
-
-    cursor: pointer;
-
-    border: 5px solid #704000;
-    border-radius: 25px;
-
-    background:
-        linear-gradient(
-            180deg,
-            #fff9bc,
-            #ffca45
-        );
-
-    box-shadow:
-        0 9px 0 #9b5b00,
-        0 14px 18px rgba(0, 0, 0, 0.25);
-
-    transition:
-        transform 0.15s,
-        box-shadow 0.15s;
-}
-
-.levelButton:hover {
-    transform: translateY(-5px);
-
-    box-shadow:
-        0 14px 0 #9b5b00,
-        0 20px 25px rgba(0, 0, 0, 0.3);
-}
-
-.levelButton:active {
-    transform: translateY(6px);
-
-    box-shadow:
-        0 3px 0 #9b5b00;
-}
-
-.levelButton span {
-    display: block;
-}
-
-.levelName {
-    font-size: clamp(55px, 8vw, 90px);
-    font-weight: bold;
-    line-height: 1;
-
-    color: #e66a00;
-}
-
-.levelText {
-    margin-top: 10px;
-
-    font-size: 24px;
-    font-weight: bold;
-
-    color: #333;
-}
-
-.levelTarget {
-    margin-top: 8px;
-
-    font-size: 21px;
-    font-weight: bold;
-
-    color: #b33100;
-}
-
-/* =====================================================
-   右下の制作者カード
-===================================================== */
-
-#creatorCard {
-    position: fixed;
-
-    right: 16px;
-    bottom: 16px;
-
-    z-index: 140;
-
-    min-width: 135px;
-
-    padding: 8px 13px;
-
-    text-align: center;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255, 255, 255, 0.95),
-            rgba(255, 233, 151, 0.95)
-        );
-
-    border: 2px solid #754100;
-    border-radius: 12px;
-
-    box-shadow:
-        0 5px 12px rgba(0, 0, 0, 0.45),
-        inset 0 0 0 2px rgba(255, 255, 255, 0.6);
-
-    transform: rotate(-1.5deg);
-
-    pointer-events: none;
-}
-
-.creatorYear {
-    color: #7a4200;
-
-    font-size: 12px;
-    font-weight: 900;
-    letter-spacing: 1px;
-}
-
-.creatorName {
-    margin-top: 2px;
-
-    color: #322000;
-
-    font-size: 15px;
-    font-weight: 900;
-}
-
-/* =====================================================
-   スマホ・小さい画面
-===================================================== */
-
-@media (max-width: 700px) {
-
-    #levelSelectPanel {
-        padding: 20px;
-    }
-
-    #levelButtons {
-        gap: 10px;
-    }
-
-    .levelButton {
-        width: 31%;
-        min-height: 165px;
-
-        padding: 10px 5px;
-    }
-
-    .levelText {
-        font-size: 17px;
-    }
-
-    .levelTarget {
-        font-size: 16px;
-    }
-
-    #info {
-        bottom: 22px;
-
-        min-width: 280px;
-
-        padding: 10px 18px;
-
-        gap: 17px;
-    }
-
-    .infoItem {
-        min-width: 95px;
-    }
-
-    .infoLabel {
-        font-size: 14px;
-    }
-
-    #time,
-    #count {
-        font-size: 43px;
-
-        -webkit-text-stroke: 1.5px #6d3300;
-    }
-
-    .infoUnit {
-        font-size: 19px;
-    }
-
-    .infoDivider {
-        height: 50px;
-    }
-
-    #creatorCard {
-        right: 7px;
-        bottom: 125px;
-
-        min-width: 105px;
-
-        padding: 6px 8px;
-    }
-
-    .creatorYear {
-        font-size: 10px;
-    }
-
-    .creatorName {
-        font-size: 12px;
-    }
-
-    #message {
-        max-width: 95vw;
-
-        font-size: clamp(38px, 12vw, 75px);
-    }
-}
-/* =====================================================
-   結果画面
-===================================================== */
-
-#message {
-    position: fixed;
-    top: 46%;
-    left: 50%;
-
-    transform: translate(-50%, -50%);
-
-    width: min(90vw, 900px);
-    max-height: 78vh;
-
-    z-index: 1000;
-
-    text-align: center;
-    line-height: 1;
-
-    pointer-events: none;
-}
-
-/* 結果画面全体 */
-.resultScreen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 6px;
-
-    padding: 20px 35px;
-
-    border: 5px solid #ffd34d;
-    border-radius: 30px;
-
-    background:
-        radial-gradient(
-            circle at center,
-            rgba(70, 30, 0, 0.9),
-            rgba(5, 5, 10, 0.92)
-        );
-
-    box-shadow:
-        0 0 25px rgba(255, 190, 30, 0.9),
-        0 0 60px rgba(255, 115, 0, 0.65),
-        inset 0 0 30px rgba(255, 220, 100, 0.25);
-}
-
-/* ゲームクリア */
-.resultTitle {
-    margin: 0;
-
-    font-size: clamp(48px, 6vw, 86px);
-    font-weight: 900;
-    line-height: 0.95;
-
-    color: #ffe982;
-
-    text-shadow:
-        4px 4px 0 #8b4300,
-        -2px -2px 0 #fff5b5,
-        0 0 15px #ffb000,
-        0 0 35px #ff6500;
-}
-
-/* 押した回数 */
-.resultCount {
-    margin: 4px 0 0;
-
-    font-size: clamp(82px, 11vw, 150px);
-    font-weight: 900;
-    line-height: 0.85;
-
-    color: #fff4a8;
-
-    text-shadow:
-        5px 5px 0 #8d4700,
-        -2px -2px 0 white,
-        0 0 20px #ffc400,
-        0 0 45px #ff7100;
-}
-
-/* おせたよ */
-.resultSubText {
-    margin: 0;
-
-    font-size: clamp(32px, 4vw, 58px);
-    font-weight: 900;
-    line-height: 1;
-
-    color: white;
-
-    text-shadow:
-        3px 3px 0 #742f00,
-        0 0 15px #ffb000;
-}
-
-/* 豪華クリア1 */
-.great1Label {
-    margin: 0 0 2px;
-
-    font-size: clamp(34px, 4.5vw, 64px);
-    font-weight: 900;
-    line-height: 0.95;
-
-    color: #ffef65;
-
-    text-shadow:
-        4px 4px 0 #9b4800,
-        0 0 18px #ffd000,
-        0 0 35px #ff7300;
-
-    animation:
-        great1Bounce
-        0.55s ease-in-out
-        infinite alternate;
-}
-
-/* 豪華クリア2 */
-.great2Label {
-    margin: 0 0 2px;
-
-    font-size: clamp(38px, 5vw, 72px);
-    font-weight: 900;
-    line-height: 0.92;
-
-    color: #fff078;
-
-    text-shadow:
-        4px 4px 0 #9b2500,
-        -2px -2px 0 #fff8bc,
-        0 0 18px #ffdb00,
-        0 0 42px #ff3c00;
-
-    animation:
-        great2Bounce
-        0.38s ease-in-out
-        infinite alternate;
-}
-
-/* 豪華1の回数 */
-.great1Result {
-    color: #fff282;
-}
-
-/* 豪華2の回数 */
-.great2Result {
-    color: #fff4a2;
-
-    animation:
-        great2CountPulse
-        0.38s ease-in-out
-        infinite alternate;
-}
-
-/* ゲームオーバー */
-.failureTitle {
-    margin: 0;
-
-    font-size: clamp(48px, 6vw, 82px);
-    font-weight: 900;
-    line-height: 1;
-
-    color: white;
-
-    text-shadow:
-        4px 4px 0 #5b0000,
-        0 0 20px #ff2d2d;
-}
-
-.remainingResult {
-    margin-top: 8px;
-
-    font-size: clamp(28px, 3.5vw, 48px);
-    font-weight: 900;
-    line-height: 1;
-
-    color: #fff27a;
-
-    text-shadow:
-        3px 3px 0 #713000,
-        0 0 15px #ff9d00;
-}
-
-@keyframes great1Bounce {
-    from {
-        transform: translateY(0) scale(1);
-    }
-
-    to {
-        transform: translateY(-5px) scale(1.06);
-    }
-}
-
-@keyframes great2Bounce {
-    from {
-        transform:
-            translateY(0)
-            rotate(-1deg)
-            scale(1);
-    }
-
-    to {
-        transform:
-            translateY(-7px)
-            rotate(1deg)
-            scale(1.07);
-    }
-}
-
-@keyframes great2CountPulse {
-    from {
-        transform: scale(1);
-    }
-
-    to {
-        transform: scale(1.06);
-    }
+    background: linear-gradient(transparent, var(--gold), transparent);
+    box-shadow: 0 0 8px #ffb300;
 }
 
 /* =====================================================
    クリアまでの残り回数
 ===================================================== */
-
 #remaining {
     display: none;
+    position: fixed;
+    top: 20px;
+    left: 20px;
 
-    position: fixed !important;
-
-    top: 22px !important;
-    left: 22px !important;
-    right: auto !important;
-    bottom: auto !important;
-
-    transform: none !important;
+    min-width: 235px;
+    padding: 11px 18px;
 
     z-index: 300;
-
-    min-width: 220px;
-    padding: 10px 18px;
-
-    border: 3px solid #ffe066;
+    color: #fff;
+    background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+    border: 3px solid var(--gold);
     border-radius: 18px;
 
-    background:
-        linear-gradient(
-            180deg,
-            rgba(35, 48, 80, 0.96),
-            rgba(5, 10, 25, 0.96)
-        );
-
-    color: white;
-
-    font-size: 25px;
+    font-size: 24px;
     font-weight: 900;
     line-height: 1.15;
     text-align: center;
@@ -742,43 +138,175 @@ canvas {
 
 #remainingCount {
     display: inline-block;
-
     margin: 0 4px;
-
     color: #fff36b;
-
     font-size: 38px;
-    font-weight: 900;
     line-height: 1;
+    text-shadow: 0 0 10px #ffd400, 3px 3px 0 var(--brown);
 }
 
-/* クリアライン達成後 */
 #remaining.remainingCleared {
     color: #fff36b;
     font-size: 27px;
-
-    animation:
-        remainingPulse
-        0.45s ease-in-out
-        infinite alternate;
+    animation: remainingPulse 0.45s ease-in-out infinite alternate;
 }
 
 @keyframes remainingPulse {
-    from {
-        transform: scale(1);
-    }
-
-    to {
-        transform: scale(1.06);
-    }
+    from { transform: scale(1); }
+    to { transform: scale(1.06); }
 }
 
 /* =====================================================
-   ひのぼうけん オープニング画面
-   子どもにはタイトルだけを見せ、運営は数字キーで難易度を設定
+   中央メッセージ / 結果画面
 ===================================================== */
+#message {
+    position: fixed;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%);
 
-.openingScreen {
+    width: min(90vw, 900px);
+    max-height: 78vh;
+
+    color: var(--gold);
+    font-size: clamp(48px, 9vw, 120px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 2px;
+    white-space: pre-line;
+    text-align: center;
+
+    -webkit-text-stroke: 3px #7a3b00;
+    text-shadow:
+        0 0 12px #fff59d,
+        0 0 30px #ffb300,
+        3px 3px 0 #7a3b00,
+        -3px 3px 0 #7a3b00,
+        3px -3px 0 #7a3b00,
+        -3px -3px 0 #7a3b00,
+        0 8px 18px rgba(0, 0, 0, 0.6);
+
+    z-index: 1000;
+    display: none;
+    pointer-events: none;
+    animation: messagePopIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+
+@keyframes messagePopIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+    60% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.resultScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    padding: 20px 35px;
+    border: 5px solid #ffd34d;
+    border-radius: 30px;
+    background: radial-gradient(circle at center, rgba(70, 30, 0, 0.9), rgba(5, 5, 10, 0.92));
+
+    box-shadow:
+        0 0 25px rgba(255, 190, 30, 0.9),
+        0 0 60px rgba(255, 115, 0, 0.65),
+        inset 0 0 30px rgba(255, 220, 100, 0.25);
+}
+
+.resultTitle {
+    margin: 0;
+    color: #ffe982;
+    font-size: clamp(48px, 6vw, 86px);
+    font-weight: 900;
+    line-height: 0.95;
+    text-shadow: 4px 4px 0 #8b4300, -2px -2px 0 #fff5b5, 0 0 15px #ffb000, 0 0 35px #ff6500;
+}
+
+.resultCount {
+    margin: 4px 0 0;
+    color: #fff4a8;
+    font-size: clamp(82px, 11vw, 150px);
+    font-weight: 900;
+    line-height: 0.85;
+    text-shadow: 5px 5px 0 #8d4700, -2px -2px 0 #fff, 0 0 20px #ffc400, 0 0 45px #ff7100;
+}
+
+.resultSubText {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(32px, 4vw, 58px);
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 3px 3px 0 #742f00, 0 0 15px #ffb000;
+}
+
+.great1Label,
+.great2Label {
+    margin: 0 0 2px;
+    font-weight: 900;
+    line-height: 0.92;
+}
+
+.great1Label {
+    color: #ffef65;
+    font-size: clamp(34px, 4.5vw, 64px);
+    text-shadow: 4px 4px 0 #9b4800, 0 0 18px #ffd000, 0 0 35px #ff7300;
+    animation: great1Bounce 0.55s ease-in-out infinite alternate;
+}
+
+.great2Label {
+    color: #fff078;
+    font-size: clamp(38px, 5vw, 72px);
+    text-shadow: 4px 4px 0 #9b2500, -2px -2px 0 #fff8bc, 0 0 18px #ffdb00, 0 0 42px #ff3c00;
+    animation: great2Bounce 0.38s ease-in-out infinite alternate;
+}
+
+.great1Result { color: #fff282; }
+.great2Result {
+    color: #fff4a2;
+    animation: great2CountPulse 0.38s ease-in-out infinite alternate;
+}
+
+.failureTitle {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(48px, 6vw, 82px);
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 4px 4px 0 #5b0000, 0 0 20px #ff2d2d;
+}
+
+.remainingResult {
+    margin-top: 8px;
+    color: #fff27a;
+    font-size: clamp(28px, 3.5vw, 48px);
+    font-weight: 900;
+    line-height: 1;
+    text-shadow: 3px 3px 0 #713000, 0 0 15px #ff9d00;
+}
+
+@keyframes great1Bounce {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-5px) scale(1.06); }
+}
+
+@keyframes great2Bounce {
+    from { transform: translateY(0) rotate(-1deg) scale(1); }
+    to { transform: translateY(-7px) rotate(1deg) scale(1.07); }
+}
+
+@keyframes great2CountPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.06); }
+}
+
+/* =====================================================
+   オープニング
+===================================================== */
+#levelSelect {
     position: fixed;
     inset: 0;
     z-index: 2000;
@@ -788,259 +316,262 @@ canvas {
     justify-content: center;
 
     overflow: hidden;
-    background: transparent;
-}
-
-.openingShade {
-    position: absolute;
-    inset: 0;
     background:
-        radial-gradient(circle at 50% 43%, rgba(75, 25, 0, 0.22), rgba(0, 0, 0, 0.76) 65%),
-        rgba(0, 0, 0, 0.22);
-    backdrop-filter: brightness(0.58) saturate(0.82);
-    transition: opacity 0.8s ease;
+        radial-gradient(circle at center, rgba(94, 36, 0, 0.28), rgba(0, 0, 0, 0.82)),
+        rgba(0, 0, 0, 0.72);
+
+    transition: opacity 0.35s ease;
 }
 
-.openingGlow {
-    position: absolute;
-    left: 50%;
-    top: 47%;
-    width: min(58vw, 720px);
-    aspect-ratio: 1;
-    transform: translate(-50%, -50%) scale(0.38);
-    border-radius: 50%;
-    opacity: 0.22;
-    background: radial-gradient(
-        circle,
-        rgba(255, 245, 160, 0.85) 0%,
-        rgba(255, 155, 20, 0.44) 26%,
-        rgba(255, 65, 0, 0.15) 53%,
-        transparent 72%
-    );
-    filter: blur(10px);
-    transition: transform 0.9s cubic-bezier(.2, 1, .35, 1), opacity 0.9s ease;
+#levelSelect.openingFinished {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .openingPanel {
     position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+}
+
+#openingTitleWrap {
+    position: relative;
     z-index: 3;
-    width: min(92vw, 960px);
-    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    background: transparent;
-    border: 0;
-    box-shadow: none;
+    transform: translateY(0) scale(1);
+    transition: transform 0.7s ease, filter 0.7s ease;
 }
 
 .openingFlame {
-    margin-bottom: 2px;
-    font-size: clamp(48px, 7vw, 92px);
+    font-size: clamp(62px, 8vw, 112px);
     line-height: 1;
-    filter: drop-shadow(0 0 12px rgba(255, 120, 0, 0.9));
-    animation: openingFlameFloat 1.25s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 14px rgba(255, 119, 0, 0.95));
+    animation: flameFloat 1.2s ease-in-out infinite alternate;
 }
 
-.openingTitle {
-    margin: 0;
-    color: #fff18a;
-    font-size: clamp(62px, 10vw, 142px);
-    font-weight: 1000;
-    line-height: 0.96;
-    letter-spacing: 0.06em;
-    -webkit-text-stroke: 3px #7b2f00;
+#openingTitle {
+    margin: 8px 0 0;
+    color: #ffe96f;
+    font-size: clamp(64px, 10vw, 150px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: 0.05em;
+
+    -webkit-text-stroke: 4px #7e2600;
     text-shadow:
-        0 0 10px #fff4a8,
-        0 0 24px #ffb000,
-        0 0 52px rgba(255, 78, 0, 0.82),
-        5px 6px 0 #742500;
-    transition:
-        transform 0.85s cubic-bezier(.2, 1.3, .35, 1),
-        color 0.7s ease,
-        text-shadow 0.7s ease;
-    animation: openingTitleBreathe 1.8s ease-in-out infinite alternate;
+        0 0 12px #fff6a6,
+        0 0 28px #ffb000,
+        0 0 60px rgba(255, 74, 0, 0.95),
+        6px 6px 0 #6f1f00;
+
+    transition: color 0.5s ease, text-shadow 0.5s ease;
 }
 
-.openingSubtitle {
+#openingSubtitle {
     margin: 18px 0 0;
-    color: #fff;
-    font-size: clamp(31px, 4.8vw, 66px);
-    font-weight: 1000;
+    color: #fff7c0;
+    font-size: clamp(30px, 4.5vw, 64px);
+    font-weight: 900;
     line-height: 1;
-    letter-spacing: 0.08em;
     opacity: 0;
-    transform: translateY(22px) scale(0.88);
-    text-shadow:
-        3px 4px 0 #7b2f00,
-        0 0 12px #fff1a0,
-        0 0 28px #ff7b00;
-    transition: opacity 0.55s ease, transform 0.75s cubic-bezier(.2, 1.45, .35, 1);
+    transform: translateY(22px) scale(0.92);
+    text-shadow: 0 0 12px #ffcc35, 0 0 30px #ff6500, 3px 3px 0 #7a2a00;
+    transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
-.openingCountdown {
+#openingSubtitle.isVisible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+#levelSelect.openingSelected #openingTitleWrap {
+    transform: scale(1.08);
+    filter: brightness(1.2);
+}
+
+#levelSelect.openingSelected #openingTitle {
+    color: #ffbd45;
+    text-shadow:
+        0 0 16px #fff0a0,
+        0 0 40px #ff9a00,
+        0 0 90px rgba(255, 55, 0, 1),
+        7px 7px 0 #6f1f00;
+}
+
+#levelSelect.countdownMode #openingTitleWrap {
+    transform: translateY(-24vh) scale(0.62);
+    opacity: 0.88;
+}
+
+#openingCountdown {
     position: absolute;
     left: 50%;
-    top: calc(100% + 18px);
-    min-width: 100%;
-    transform: translateX(-50%);
-    color: #fff6a8;
-    font-size: clamp(92px, 17vw, 230px);
-    font-weight: 1000;
-    line-height: 0.8;
-    opacity: 0;
-    -webkit-text-stroke: 4px #7a2600;
+    top: 53%;
+    z-index: 4;
+    transform: translate(-50%, -50%);
+
+    min-width: 70vw;
+    color: #fff36b;
+    font-size: clamp(100px, 20vw, 260px);
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+
+    -webkit-text-stroke: 5px #8a2f00;
     text-shadow:
-        0 0 15px #fff5ba,
-        0 0 34px #ffb000,
-        0 0 72px #ff3d00,
-        8px 9px 0 #6f2300;
+        0 0 14px #fff9b3,
+        0 0 35px #ffb000,
+        0 0 80px #ff4800,
+        8px 8px 0 #6e2100;
 }
 
-.openingCountdown.is-visible {
-    opacity: 1;
-    animation: openingCountPop 0.52s cubic-bezier(.15, 1.6, .3, 1);
+#openingCountdown.countdownPop {
+    animation: countdownPop 0.45s cubic-bezier(0.2, 1.7, 0.4, 1);
 }
 
-.openingCountdown.is-start {
-    font-size: clamp(74px, 13vw, 180px);
-    color: #fff;
-    white-space: nowrap;
-    animation: openingStartBurst 0.62s cubic-bezier(.1, 1.45, .25, 1);
+@keyframes countdownPop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    65% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
-.staffHint {
-    position: absolute;
-    right: 12px;
-    bottom: 10px;
-    z-index: 5;
-    color: rgba(255, 255, 255, 0.22);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    user-select: none;
-}
-
-.openingEmbers {
+#openingEmbers {
     position: absolute;
     inset: 0;
-    z-index: 2;
+    z-index: 1;
+    overflow: hidden;
     pointer-events: none;
 }
 
 .openingEmber {
     position: absolute;
-    bottom: -5vh;
+    left: var(--x);
+    bottom: -18px;
     width: var(--size);
     height: var(--size);
     border-radius: 50%;
+    background: radial-gradient(circle, #fff6a3 0 20%, #ff9a00 45%, #ff3b00 75%, transparent 100%);
+    box-shadow: 0 0 10px #ff7a00, 0 0 22px rgba(255, 67, 0, 0.8);
     opacity: 0;
-    background: #ffd36a;
-    box-shadow:
-        0 0 calc(var(--size) * 2) #ff9a00,
-        0 0 calc(var(--size) * 4) #ff3d00;
-    animation: openingEmberRise var(--duration) linear infinite;
+    animation: emberRise var(--duration) linear infinite;
     animation-delay: var(--delay);
 }
 
-/* スタッフが難易度を決めた直後 */
-.openingScreen.is-selected .openingGlow {
-    opacity: 0.92;
-    transform: translate(-50%, -50%) scale(1.12);
-}
-
-.openingScreen.is-selected .openingTitle {
-    color: #ffb52e;
-    transform: scale(1.1);
-    text-shadow:
-        0 0 11px #fff6bf,
-        0 0 30px #ffcb31,
-        0 0 70px #ff4b00,
-        6px 7px 0 #742500;
-}
-
-.openingScreen.is-selected .openingSubtitle {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-.openingScreen.is-selected .openingEmber {
+#levelSelect.openingSelected .openingEmber {
     animation-duration: calc(var(--duration) * 0.62);
+    filter: brightness(1.25);
 }
 
-/* カウントダウン中はタイトルを少し上へ */
-.openingScreen.is-counting .openingPanel {
-    transform: translateY(-16vh);
-    transition: transform 0.75s cubic-bezier(.2, 1, .35, 1);
+@keyframes emberRise {
+    0% { opacity: 0; transform: translate3d(0, 0, 0) scale(0.6); }
+    15% { opacity: 1; }
+    70% { opacity: 0.8; }
+    100% { opacity: 0; transform: translate3d(40px, -115vh, 0) scale(1.2); }
 }
 
-.openingScreen.is-counting .openingTitle {
-    transform: scale(0.66);
+@keyframes flameFloat {
+    from { transform: translateY(0) rotate(-2deg) scale(1); }
+    to { transform: translateY(-8px) rotate(2deg) scale(1.06); }
 }
 
-.openingScreen.is-counting .openingFlame {
-    transform: scale(0.7);
+.staffHint {
+    position: fixed;
+    right: 12px;
+    bottom: 10px;
+    z-index: 5;
+    color: rgba(255, 255, 255, 0.28);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    user-select: none;
 }
 
-.openingScreen.is-counting .openingSubtitle {
-    opacity: 0;
-    transform: translateY(-12px) scale(0.9);
-}
+/* =====================================================
+   制作者カード
+===================================================== */
+#creatorCard {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 140;
 
-.openingScreen.is-leaving {
+    min-width: 135px;
+    padding: 8px 13px;
+    text-align: center;
+
+    background: linear-gradient(145deg, rgba(255,255,255,.95), rgba(255,233,151,.95));
+    border: 2px solid #754100;
+    border-radius: 12px;
+    box-shadow: 0 5px 12px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.6);
+    transform: rotate(-1.5deg);
     pointer-events: none;
-    animation: openingFadeOut 0.65s ease forwards;
 }
 
-@keyframes openingTitleBreathe {
-    from { filter: brightness(0.92); }
-    to   { filter: brightness(1.18); }
+.creatorYear {
+    color: #7a4200;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 
-@keyframes openingFlameFloat {
-    from { transform: translateY(3px) scale(0.96) rotate(-2deg); }
-    to   { transform: translateY(-5px) scale(1.05) rotate(2deg); }
+.creatorName {
+    margin-top: 2px;
+    color: #322000;
+    font-size: 15px;
+    font-weight: 900;
 }
 
-@keyframes openingCountPop {
-    0%   { transform: translateX(-50%) scale(0.25); opacity: 0; }
-    58%  { transform: translateX(-50%) scale(1.22); opacity: 1; }
-    100% { transform: translateX(-50%) scale(1); opacity: 1; }
-}
-
-@keyframes openingStartBurst {
-    0%   { transform: translateX(-50%) scale(0.2) rotate(-4deg); opacity: 0; }
-    55%  { transform: translateX(-50%) scale(1.2) rotate(2deg); opacity: 1; }
-    100% { transform: translateX(-50%) scale(1) rotate(0); opacity: 1; }
-}
-
-@keyframes openingEmberRise {
-    0% {
-        transform: translate3d(0, 0, 0) scale(0.45);
-        opacity: 0;
-    }
-    12% { opacity: 0.95; }
-    75% { opacity: 0.72; }
-    100% {
-        transform: translate3d(var(--drift), -112vh, 0) scale(1.35);
-        opacity: 0;
-    }
-}
-
-@keyframes openingFadeOut {
-    from { opacity: 1; }
-    to   { opacity: 0; visibility: hidden; }
-}
-
+/* =====================================================
+   小さい画面
+===================================================== */
 @media (max-width: 700px) {
-    .openingPanel {
-        padding: 20px 10px;
+    #info {
+        bottom: 18px;
+        min-width: 290px;
+        padding: 10px 18px;
+        gap: 17px;
     }
 
-    .openingScreen.is-counting .openingPanel {
-        transform: translateY(-13vh);
+    .infoItem { min-width: 95px; }
+    .infoLabel { font-size: 14px; }
+    #time, #count { font-size: 43px; -webkit-text-stroke: 1.5px var(--brown); }
+    .infoUnit { font-size: 19px; }
+    .infoDivider { height: 50px; }
+
+    #remaining {
+        top: 12px;
+        left: 12px;
+        min-width: 195px;
+        padding: 9px 13px;
+        font-size: 20px;
+    }
+
+    #remainingCount { font-size: 31px; }
+
+    #creatorCard {
+        right: 7px;
+        bottom: 118px;
+        min-width: 105px;
+        padding: 6px 8px;
+    }
+
+    .creatorYear { font-size: 10px; }
+    .creatorName { font-size: 12px; }
+
+    #levelSelect.countdownMode #openingTitleWrap {
+        transform: translateY(-22vh) scale(0.54);
     }
 
     .staffHint {
-        font-size: 8px;
-        opacity: 0.7;
+        font-size: 9px;
+        right: 7px;
+        bottom: 6px;
     }
 }
