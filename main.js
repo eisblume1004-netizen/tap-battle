@@ -146,145 +146,28 @@ let bossStartScale = 1;
 const timeText = document.getElementById("time");
 const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
-
-
-// 結果画面・残り回数表示の見た目をJS側で追加する。
-// CSSファイル側に同名指定がある場合は、あとから読み込まれた方が優先される。
-const gameResultStyle = document.createElement("style");
-gameResultStyle.textContent = `
-#remaining {
-    position: fixed;
-    top: 22px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1200;
-    padding: 10px 26px;
-    border: 4px solid #ffd34d;
-    border-radius: 24px;
-    background: rgba(8, 8, 15, 0.82);
-    color: #fff;
-    font-size: clamp(24px, 2.6vw, 40px);
-    font-weight: 900;
-    line-height: 1;
-    text-align: center;
-    box-shadow: 0 0 18px rgba(255, 190, 40, 0.9);
-    pointer-events: none;
-}
-#remaining .remainingNumber {
-    display: inline-block;
-    min-width: 1.5em;
-    color: #fff36b;
-    font-size: 1.25em;
-}
-#remaining.remainingCleared {
-    color: #fff36b;
-    animation: remainingPulse .45s ease-in-out infinite alternate;
-}
-#message {
-    position: fixed;
-    top: 44%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1300;
-    width: min(92vw, 980px);
-    max-height: 76vh;
-    text-align: center;
-    line-height: 1;
-    pointer-events: none;
-}
-.resultScreen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 18px 32px 22px;
-    border: 6px solid #ffd34d;
-    border-radius: 32px;
-    background: radial-gradient(circle at center, rgba(88, 39, 0, .92), rgba(5, 5, 14, .94));
-    box-shadow: 0 0 28px rgba(255, 196, 35, .95), 0 0 72px rgba(255, 87, 0, .72), inset 0 0 36px rgba(255, 230, 120, .28);
-}
-.resultTitle {
-    margin: 0;
-    font-size: clamp(50px, 6.2vw, 92px);
-    font-weight: 900;
-    line-height: .92;
-    color: #ffe983;
-    text-shadow: 4px 4px 0 #8b4300, -2px -2px 0 #fff7c5, 0 0 18px #ffb000, 0 0 42px #ff5a00;
-}
-.resultCount {
-    margin: 2px 0 0;
-    font-size: clamp(86px, 11vw, 158px);
-    font-weight: 900;
-    line-height: .8;
-    color: #fff3a3;
-    text-shadow: 5px 5px 0 #8d4700, -2px -2px 0 #fff, 0 0 22px #ffc400, 0 0 50px #ff6500;
-}
-.resultSubText {
-    margin: 0;
-    font-size: clamp(32px, 4vw, 58px);
-    font-weight: 900;
-    line-height: .95;
-    color: #fff;
-    text-shadow: 3px 3px 0 #742f00, 0 0 16px #ffb000;
-}
-.great1Label, .great2Label {
-    margin: 0 0 2px;
-    font-weight: 900;
-    line-height: .88;
-}
-.great1Label {
-    font-size: clamp(36px, 4.6vw, 66px);
-    color: #fff073;
-    text-shadow: 4px 4px 0 #9b4800, 0 0 18px #ffd000, 0 0 36px #ff7300;
-    animation: great1Bounce .5s ease-in-out infinite alternate;
-}
-.great2Label {
-    font-size: clamp(40px, 5.2vw, 76px);
-    color: #fff2a0;
-    text-shadow: 4px 4px 0 #9b2500, -2px -2px 0 #fff8bc, 0 0 20px #ffdb00, 0 0 46px #ff2f00;
-    animation: great2Bounce .34s ease-in-out infinite alternate;
-}
-.great1Result { color: #fff282; }
-.great2Result {
-    color: #fff6b0;
-    animation: great2CountPulse .34s ease-in-out infinite alternate;
-}
-.failureTitle {
-    margin: 0;
-    font-size: clamp(48px, 6vw, 84px);
-    font-weight: 900;
-    line-height: 1;
-    color: #fff;
-    text-shadow: 4px 4px 0 #5b0000, 0 0 22px #ff2d2d;
-}
-.remainingResult {
-    margin-top: 8px;
-    font-size: clamp(28px, 3.4vw, 48px);
-    font-weight: 900;
-    line-height: 1;
-    color: #fff27a;
-    text-shadow: 3px 3px 0 #713000, 0 0 16px #ff9d00;
-}
-@keyframes remainingPulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.08); } }
-@keyframes great1Bounce { from { transform: translateY(0) scale(1); } to { transform: translateY(-5px) scale(1.06); } }
-@keyframes great2Bounce { from { transform: translateY(0) rotate(-1deg) scale(1); } to { transform: translateY(-7px) rotate(1deg) scale(1.07); } }
-@keyframes great2CountPulse { from { transform: scale(1); } to { transform: scale(1.06); } }
-`;
-document.head.appendChild(gameResultStyle);
-
+const remainingText = document.getElementById("remaining");
+const remainingCountText = document.getElementById("remainingCount");
 function updateRemainingCount() {
+
     const remaining = Math.max(targetCount - clickCount, 0);
 
     if (remaining > 0) {
+
         remainingText.classList.remove("remainingCleared");
-        remainingText.innerHTML = `クリアまで あと <span class="remainingNumber">${remaining}</span> かい`;
+
+        remainingText.innerHTML = `
+            クリアまで あと
+            <span id="remainingCount">${remaining}</span>
+            かい
+        `;
+
     } else {
+
         remainingText.classList.add("remainingCleared");
         remainingText.textContent = "クリアラインたっせい！";
     }
 }
-
 function showMessage(text) {
 
     messageText.textContent = text;
@@ -1650,13 +1533,14 @@ let gameClearStarted = false;
 
 function hideStatusPanel() {
     // よく使われる候補IDを順番に探す。
-    const statusCandidates = [
-        "status",
-        "statusPanel",
-        "gameStatus",
-        "hud",
-        "infoPanel"
-    ];
+   const statusCandidates = [
+    "info",
+    "status",
+    "statusPanel",
+    "gameStatus",
+    "hud",
+    "infoPanel"
+];
 
     for (const id of statusCandidates) {
         const element = document.getElementById(id);
