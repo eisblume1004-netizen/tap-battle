@@ -1048,3 +1048,232 @@ canvas {
     35% { background-color: rgba(255, 194, 38, 0.2); }
     100% { background-color: rgba(0, 0, 0, 0); }
 }
+
+
+/* =====================================================
+   最終調整：物語が始まるようなオープニング
+   既存の金色・太い文字デザインを残し、選択後だけ強く発光する
+===================================================== */
+
+#levelSelect {
+    background:
+        radial-gradient(circle at 50% 46%, rgba(115, 38, 0, 0.26), transparent 38%),
+        rgba(0, 0, 0, 0.72);
+}
+
+#openingTitleWrap {
+    z-index: 6;
+    transition:
+        transform 0.75s cubic-bezier(0.2, 1.4, 0.35, 1),
+        filter 0.55s ease;
+}
+
+#openingTitle {
+    margin: 0;
+    color: #ffe066;
+    font-size: clamp(76px, 11vw, 170px);
+    font-weight: 1000;
+    line-height: 0.92;
+    letter-spacing: 0.035em;
+    -webkit-text-stroke: 4px #713000;
+    text-shadow:
+        0 0 10px rgba(255, 250, 170, 0.72),
+        0 0 24px rgba(255, 179, 0, 0.62),
+        5px 5px 0 #713000,
+        -3px 3px 0 #713000,
+        3px -3px 0 #713000;
+    animation: openingTitleIdle 1.45s ease-in-out infinite alternate;
+}
+
+.openingFlame {
+    font-size: clamp(54px, 7vw, 100px);
+    filter: drop-shadow(0 0 15px #ff7a00);
+    animation: openingFlameFloat 1.1s ease-in-out infinite alternate;
+}
+
+#openingSubtitle {
+    margin: 20px 0 0;
+    color: #fff4ae;
+    font-size: clamp(32px, 4vw, 62px);
+    font-weight: 1000;
+    line-height: 1;
+    opacity: 0;
+    transform: translateY(24px) scale(0.88);
+    text-shadow:
+        0 0 12px #fff59d,
+        0 0 26px #ff8a00,
+        3px 3px 0 #713000;
+    transition:
+        opacity 0.42s ease,
+        transform 0.6s cubic-bezier(0.2, 1.45, 0.35, 1);
+}
+
+#openingSubtitle.isVisible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* 運営が難易度を選んだ瞬間 */
+#levelSelect.openingSelected #openingTitleWrap {
+    transform: scale(1.11);
+    filter: brightness(1.22) saturate(1.28);
+}
+
+#levelSelect.openingSelected #openingTitle {
+    color: #ffb52f;
+    animation: openingTitleSelected 0.36s ease-in-out infinite alternate;
+    text-shadow:
+        0 0 10px #fffbd0,
+        0 0 26px #ffd000,
+        0 0 58px #ff6a00,
+        0 0 95px rgba(255, 42, 0, 0.75),
+        6px 6px 0 #713000,
+        -3px 3px 0 #713000,
+        3px -3px 0 #713000;
+}
+
+#openingBurst {
+    position: absolute;
+    left: 50%;
+    top: 47%;
+    width: min(58vw, 760px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0.25);
+    opacity: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle, rgba(255, 247, 172, 0.78) 0 4%, rgba(255, 159, 0, 0.35) 22%, rgba(255, 64, 0, 0.12) 48%, transparent 69%);
+    filter: blur(2px);
+    z-index: 2;
+}
+
+#levelSelect.openingSelected #openingBurst {
+    animation: openingBurstPulse 0.9s ease-out both;
+}
+
+/* カウントダウン時はタイトルを上へ移動 */
+#levelSelect.countdownMode #openingTitleWrap {
+    transform: translateY(-24vh) scale(0.62);
+    filter: brightness(1.15);
+}
+
+#levelSelect.countdownMode #openingSubtitle {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.9);
+}
+
+#openingCountdown {
+    position: fixed;
+    left: 50%;
+    top: 51%;
+    z-index: 20;
+    width: 100%;
+    transform: translate(-50%, -50%);
+    color: #ffe066;
+    font-size: clamp(150px, 25vw, 360px);
+    font-weight: 1000;
+    line-height: 0.8;
+    letter-spacing: 0;
+    text-align: center;
+    -webkit-text-stroke: 6px #713000;
+    text-shadow:
+        0 0 12px #fffbd0,
+        0 0 30px #ffc400,
+        0 0 70px rgba(255, 85, 0, 0.92),
+        8px 8px 0 #713000,
+        -4px 4px 0 #713000,
+        4px -4px 0 #713000;
+    pointer-events: none;
+}
+
+#openingCountdown.countdownPop {
+    animation: countdownImpact 0.72s cubic-bezier(0.15, 1.45, 0.28, 1) both;
+}
+
+/* スタートだけさらに大きく、元の金文字の雰囲気を維持 */
+#levelSelect.startBlast #openingCountdown {
+    top: 50%;
+    font-size: clamp(105px, 15vw, 230px);
+    white-space: nowrap;
+    color: #fff08a;
+    -webkit-text-stroke: 6px #6e2600;
+    text-shadow:
+        0 0 10px #fff,
+        0 0 26px #fff36b,
+        0 0 55px #ffb000,
+        0 0 105px #ff3500,
+        8px 8px 0 #6e2600,
+        -4px 4px 0 #6e2600,
+        4px -4px 0 #6e2600;
+    animation: startImpact 0.85s cubic-bezier(0.12, 1.55, 0.25, 1) both;
+}
+
+#levelSelect.startBlast::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, rgba(255,255,255,0.88), rgba(255,180,0,0.34) 20%, transparent 58%);
+    animation: startFlash 0.72s ease-out both;
+    z-index: 15;
+}
+
+.staffHint {
+    opacity: 0.32;
+    font-size: 11px;
+}
+
+@keyframes openingTitleIdle {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.025); filter: brightness(1.08); }
+}
+
+@keyframes openingTitleSelected {
+    from { transform: scale(1); filter: brightness(1.05); }
+    to { transform: scale(1.035); filter: brightness(1.35); }
+}
+
+@keyframes openingFlameFloat {
+    from { transform: translateY(0) scale(1); }
+    to { transform: translateY(-7px) scale(1.08); }
+}
+
+@keyframes openingBurstPulse {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+    35% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.28); }
+}
+
+@keyframes countdownImpact {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.18) rotate(-5deg); }
+    55% { opacity: 1; transform: translate(-50%, -50%) scale(1.18) rotate(2deg); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+}
+
+@keyframes startImpact {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25); }
+    48% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); }
+    72% { transform: translate(-50%, -50%) scale(0.96); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes startFlash {
+    0% { opacity: 0; }
+    24% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@media (max-width: 700px) {
+    #levelSelect.countdownMode #openingTitleWrap {
+        transform: translateY(-22vh) scale(0.54);
+    }
+
+    #openingCountdown {
+        font-size: clamp(120px, 34vw, 250px);
+    }
+
+    #levelSelect.startBlast #openingCountdown {
+        font-size: clamp(72px, 19vw, 140px);
+    }
+}

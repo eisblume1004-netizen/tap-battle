@@ -170,7 +170,6 @@ const timeText = document.getElementById("time");
 const countText = document.getElementById("count");
 const messageText = document.getElementById("message");
 const remainingText = document.getElementById("remaining");
-const remainingCountText = document.getElementById("remainingCount");
 function updateRemainingCount() {
 
     if (!remainingText) return;
@@ -254,8 +253,6 @@ function setupOpeningScreen() {
 
             <div id="openingBurst" aria-hidden="true"></div>
             <div id="openingCountdown" aria-live="polite"></div>
-            <div id="openingStartSub">れんだスタート！</div>
-
             <div class="staffHint">
                 運営：1・2・3キー
             </div>
@@ -333,8 +330,8 @@ async function selectLevel(level, target) {
         openingSubtitle.classList.add("isVisible");
     }
 
-    // タイトルが光る時間
-    await wait(1000);
+    // タイトルが強く光り、「はじまるよ！」を見せる時間
+    await wait(1200);
 
     if (levelSelectScreen) {
         levelSelectScreen.classList.add("countdownMode");
@@ -703,6 +700,7 @@ function startCountdown() {
 
     debugLog("COUNTDOWN", "開始");
 
+    if (openingCountdown) openingCountdown.textContent = "";
     setCountdownDisplay("3");
 
     setTimeout(() => {
@@ -720,7 +718,7 @@ function startCountdown() {
     setTimeout(() => {
         if (!isCountingDown) return;
 
-        setCountdownDisplay("スタート!!");
+        setCountdownDisplay("スタート！！");
 
         if (levelSelectScreen) {
             levelSelectScreen.classList.add("startBlast");
@@ -731,7 +729,7 @@ function startCountdown() {
         debugLog("COUNTDOWN", "START");
     }, 3100);
 
-    // START!!を0.6秒表示してからオープニングを消す
+    // 「スタート！！」を少し見せてからオープニングを消す
     setTimeout(() => {
 
         if (levelSelectScreen) {
@@ -745,7 +743,7 @@ function startCountdown() {
 
         hideMessage();
 
-    }, 3700);
+    }, 3850);
 }
 
 // =====================================================
