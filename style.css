@@ -575,3 +575,476 @@ canvas {
         bottom: 6px;
     }
 }
+
+
+/* =====================================================
+   強化版 START 演出
+===================================================== */
+#openingBurst {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: 24vmin;
+    height: 24vmin;
+    z-index: 2;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle, rgba(255,255,255,.98) 0 8%, rgba(255,241,117,.95) 12%, rgba(255,130,0,.82) 28%, rgba(255,45,0,.35) 52%, transparent 72%);
+    box-shadow:
+        0 0 35px #fff7a8,
+        0 0 90px #ff9a00,
+        0 0 180px #ff3c00;
+}
+
+#openingStartSub {
+    position: absolute;
+    left: 50%;
+    top: 72%;
+    z-index: 6;
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    color: #fff7c8;
+    font-size: clamp(24px, 3.3vw, 54px);
+    font-weight: 900;
+    letter-spacing: .08em;
+    -webkit-text-stroke: 2px #7a2500;
+    text-shadow: 0 0 15px #fff1a8, 0 0 35px #ff8a00, 3px 3px 0 #5b1800;
+}
+
+#levelSelect.startBlast::before,
+#levelSelect.startBlast::after {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#levelSelect.startBlast::before {
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255,244,146,.72) 0deg 2deg,
+        rgba(255,111,0,.12) 2deg 8deg,
+        transparent 8deg 14deg
+    );
+    animation: startRaySpin .7s ease-out both;
+    mix-blend-mode: screen;
+}
+
+#levelSelect.startBlast::after {
+    background: rgba(255,238,164,.92);
+    animation: startFlash .62s ease-out both;
+}
+
+#levelSelect.startBlast #openingBurst {
+    animation: burstExpand .72s cubic-bezier(.12,.8,.22,1) both;
+}
+
+#levelSelect.startBlast #openingCountdown {
+    color: #fffdf0;
+    font-size: clamp(110px, 21vw, 290px);
+    letter-spacing: .04em;
+    -webkit-text-stroke: 7px #7d2100;
+    text-shadow:
+        0 0 18px #fff,
+        0 0 42px #fff36b,
+        0 0 95px #ff9a00,
+        0 0 170px #ff2d00,
+        10px 10px 0 #5c1700;
+    animation: startWordImpact .7s cubic-bezier(.12,1.5,.24,1) both;
+}
+
+#levelSelect.startBlast #openingStartSub {
+    animation: startSubRise .55s .08s ease-out both;
+}
+
+#levelSelect.startBlast .openingEmber {
+    animation-duration: calc(var(--duration) * .28);
+    filter: brightness(1.8) saturate(1.35);
+}
+
+@keyframes burstExpand {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.05); }
+    22% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(8); }
+}
+
+@keyframes startFlash {
+    0% { opacity: 0; }
+    12% { opacity: .9; }
+    100% { opacity: 0; }
+}
+
+@keyframes startRaySpin {
+    0% { opacity: 0; transform: scale(.2) rotate(-18deg); }
+    28% { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.35) rotate(10deg); }
+}
+
+@keyframes startWordImpact {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(.18) rotate(-4deg); }
+    55% { opacity: 1; transform: translate(-50%, -50%) scale(1.24) rotate(2deg); }
+    78% { transform: translate(-50%, -50%) scale(.96) rotate(0); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes startSubRise {
+    from { opacity: 0; transform: translate(-50%, 24px) scale(.85); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+#levelSelect:not(.openingFinished) + * { }
+
+
+/* =====================================================
+   オープニング文字：元のゲームの金文字デザインを維持
+===================================================== */
+
+#openingTitle,
+#openingSubtitle,
+#openingCountdown,
+#openingStartSub {
+    font-family: sans-serif;
+    font-weight: 900;
+}
+
+/* タイトルは元の中央メッセージと同じ金色・縁取り */
+#openingTitle {
+    color: #ffe066;
+    font-size: clamp(72px, 11vw, 170px);
+    line-height: 0.95;
+    letter-spacing: 2px;
+
+    -webkit-text-stroke: 3px #7a3b00;
+
+    text-shadow:
+        0 0 12px #fff59d,
+        0 0 30px #ffb300,
+        3px 3px 0 #7a3b00,
+        -3px 3px 0 #7a3b00,
+        3px -3px 0 #7a3b00,
+        -3px -3px 0 #7a3b00,
+        0 8px 18px rgba(0, 0, 0, 0.6);
+
+    animation: openingTitleGlow 1.05s ease-in-out infinite alternate;
+}
+
+/* 難易度を選んだ瞬間は、形を変えず発光だけ強くする */
+#levelSelect.openingSelected #openingTitle {
+    color: #ffe066;
+    text-shadow:
+        0 0 18px #fffbd0,
+        0 0 44px #ffc400,
+        0 0 82px rgba(255, 91, 0, 0.95),
+        3px 3px 0 #7a3b00,
+        -3px 3px 0 #7a3b00,
+        3px -3px 0 #7a3b00,
+        -3px -3px 0 #7a3b00,
+        0 10px 22px rgba(0, 0, 0, 0.65);
+
+    animation: openingTitleSelectedGlow 0.42s ease-in-out infinite alternate;
+}
+
+#openingSubtitle {
+    color: #ffe066;
+    font-size: clamp(34px, 4.8vw, 68px);
+    line-height: 1;
+    letter-spacing: 2px;
+
+    -webkit-text-stroke: 2px #7a3b00;
+
+    text-shadow:
+        0 0 10px #fff59d,
+        0 0 24px #ffb300,
+        2px 2px 0 #7a3b00,
+        -2px 2px 0 #7a3b00,
+        2px -2px 0 #7a3b00,
+        -2px -2px 0 #7a3b00;
+}
+
+/* 3・2・1・START!! は元のゲームの中央メッセージ風 */
+#openingCountdown {
+    min-width: 92vw;
+
+    color: #ffe066;
+    font-size: clamp(120px, 22vw, 300px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+
+    -webkit-text-stroke: 5px #7a3b00;
+
+    text-shadow:
+        0 0 16px #fff59d,
+        0 0 40px #ffb300,
+        6px 6px 0 #7a3b00,
+        -6px 6px 0 #7a3b00,
+        6px -6px 0 #7a3b00,
+        -6px -6px 0 #7a3b00,
+        0 12px 24px rgba(0, 0, 0, 0.68);
+}
+
+/* START!! だけ白文字に変えず、元の金文字のまま最大表示 */
+#levelSelect.startBlast #openingCountdown {
+    color: #ffe066;
+    font-size: clamp(145px, 24vw, 340px);
+    line-height: 0.85;
+    letter-spacing: 3px;
+
+    -webkit-text-stroke: 6px #7a3b00;
+
+    text-shadow:
+        0 0 20px #fffbd0,
+        0 0 48px #ffc400,
+        0 0 100px #ff6a00,
+        7px 7px 0 #7a3b00,
+        -7px 7px 0 #7a3b00,
+        7px -7px 0 #7a3b00,
+        -7px -7px 0 #7a3b00,
+        0 14px 28px rgba(0, 0, 0, 0.72);
+
+    animation: originalStartImpact 0.7s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+/* 「れんだスタート！」は主役のSTARTを邪魔しないよう非表示 */
+#openingStartSub {
+    display: none;
+}
+
+@keyframes openingTitleGlow {
+    from {
+        filter: brightness(1);
+        transform: scale(1);
+    }
+    to {
+        filter: brightness(1.18);
+        transform: scale(1.025);
+    }
+}
+
+@keyframes openingTitleSelectedGlow {
+    from {
+        filter: brightness(1.1);
+        transform: scale(1.04);
+    }
+    to {
+        filter: brightness(1.42);
+        transform: scale(1.1);
+    }
+}
+
+@keyframes originalStartImpact {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.28);
+    }
+    58% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+    78% {
+        transform: translate(-50%, -50%) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* =====================================================
+   物語開始オープニング 最終調整
+   レベル選択前：静かなタイトル
+   選択後：発光 → カウントダウン → スタート
+===================================================== */
+
+/* 最初はタイトルを静かに見せる */
+#openingTitle {
+    animation: none !important;
+    filter: brightness(1);
+    transform: scale(1);
+    transition:
+        transform 0.65s cubic-bezier(0.2, 1.35, 0.4, 1),
+        filter 0.65s ease,
+        color 0.65s ease,
+        text-shadow 0.65s ease;
+}
+
+/* タイトル後方の光 */
+#openingTitleWrap::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: min(72vw, 980px);
+    height: min(34vw, 430px);
+    transform: translate(-50%, -50%) scale(0.65);
+    border-radius: 50%;
+    opacity: 0;
+    background:
+        radial-gradient(
+            ellipse at center,
+            rgba(255, 246, 155, 0.95) 0%,
+            rgba(255, 173, 0, 0.55) 28%,
+            rgba(255, 73, 0, 0.25) 52%,
+            transparent 74%
+        );
+    filter: blur(10px);
+    pointer-events: none;
+    z-index: -1;
+    transition: opacity 0.55s ease, transform 0.65s ease;
+}
+
+/* スタッフが難易度を選んだ瞬間に光る */
+#levelSelect.openingSelected #openingTitleWrap::before {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    animation: storyHaloPulse 0.55s ease-in-out infinite alternate;
+}
+
+#levelSelect.openingSelected #openingTitle {
+    animation: storyTitleGlow 0.5s ease-in-out infinite alternate !important;
+}
+
+#levelSelect.openingSelected #openingTitleWrap {
+    transform: scale(1.09);
+}
+
+/* はじまるよ！をタイトル直下へ */
+#openingSubtitle {
+    margin-top: 22px;
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+    transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+#openingSubtitle.isVisible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* カウントダウン時はタイトルを上に退避 */
+#levelSelect.countdownMode #openingTitleWrap {
+    transform: translateY(-27vh) scale(0.56);
+    opacity: 0.92;
+    transition: transform 0.7s cubic-bezier(0.2, 1.1, 0.4, 1), opacity 0.5s ease;
+}
+
+#levelSelect.countdownMode #openingSubtitle {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.92);
+}
+
+/* 3・2・1を画面中央に大きく */
+#openingCountdown {
+    top: 54%;
+    width: 100vw;
+    min-width: 100vw;
+    font-size: clamp(150px, 25vw, 340px);
+    line-height: 0.82;
+    white-space: nowrap;
+}
+
+#openingCountdown.countdownPop {
+    animation: storyCountdownPop 0.72s cubic-bezier(0.16, 1.55, 0.32, 1) both;
+}
+
+/* スタートはさらに大きく、元の金文字のまま */
+#levelSelect.startBlast #openingCountdown {
+    top: 52%;
+    font-size: clamp(120px, 18vw, 270px);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    animation: storyStartImpact 0.72s cubic-bezier(0.16, 1.5, 0.3, 1) both !important;
+}
+
+#levelSelect.startBlast {
+    animation: storyScreenFlash 0.72s ease-out both;
+}
+
+/* START中はタイトルを少し暗くして主役を譲る */
+#levelSelect.startBlast #openingTitleWrap {
+    opacity: 0.45;
+    filter: brightness(0.85);
+}
+
+@keyframes storyTitleGlow {
+    from {
+        filter: brightness(1.08);
+        transform: scale(1.02);
+        text-shadow:
+            0 0 14px #fffbd0,
+            0 0 34px #ffc400,
+            0 0 62px rgba(255, 120, 0, 0.8),
+            3px 3px 0 #7a3b00,
+            -3px 3px 0 #7a3b00,
+            3px -3px 0 #7a3b00,
+            -3px -3px 0 #7a3b00;
+    }
+    to {
+        filter: brightness(1.48);
+        transform: scale(1.1);
+        text-shadow:
+            0 0 24px #ffffff,
+            0 0 58px #ffd000,
+            0 0 118px #ff4d00,
+            4px 4px 0 #7a3b00,
+            -4px 4px 0 #7a3b00,
+            4px -4px 0 #7a3b00,
+            -4px -4px 0 #7a3b00;
+    }
+}
+
+@keyframes storyHaloPulse {
+    from { opacity: 0.62; filter: blur(13px) brightness(1); }
+    to   { opacity: 1; filter: blur(7px) brightness(1.45); }
+}
+
+@keyframes storyCountdownPop {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.16) rotate(-5deg);
+        filter: blur(12px) brightness(1.8);
+    }
+    58% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.22) rotate(2deg);
+        filter: blur(0) brightness(1.4);
+    }
+    78% {
+        transform: translate(-50%, -50%) scale(0.94) rotate(0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes storyStartImpact {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.18);
+        filter: blur(16px) brightness(2.2);
+    }
+    48% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.24);
+        filter: blur(0) brightness(1.65);
+    }
+    72% {
+        transform: translate(-50%, -50%) scale(0.93);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        filter: brightness(1.15);
+    }
+}
+
+@keyframes storyScreenFlash {
+    0% { background-color: rgba(0, 0, 0, 0); }
+    35% { background-color: rgba(255, 194, 38, 0.2); }
+    100% { background-color: rgba(0, 0, 0, 0); }
+}

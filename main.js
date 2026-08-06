@@ -91,6 +91,20 @@ function debugLog(tag, data = "") {
     console.log(`[${tag}]`, data);
 }
 
+window.addEventListener("error", (event) => {
+    console.error("[RUNTIME ERROR]", {
+        message: event.message,
+        file: event.filename,
+        line: event.lineno,
+        column: event.colno,
+        error: event.error
+    });
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+    console.error("[PROMISE ERROR]", event.reason);
+});
+
 // =====================================================
 // Game変数
 // =====================================================
@@ -238,7 +252,9 @@ function setupOpeningScreen() {
                 <p id="openingSubtitle">はじまるよ！</p>
             </div>
 
+            <div id="openingBurst" aria-hidden="true"></div>
             <div id="openingCountdown" aria-live="polite"></div>
+            <div id="openingStartSub">れんだスタート！</div>
 
             <div class="staffHint">
                 運営：1・2・3キー
@@ -270,6 +286,10 @@ function setupOpeningScreen() {
         }
     }
 
+    const infoPanel = document.getElementById("info");
+    if (infoPanel) infoPanel.style.display = "none";
+    if (remainingText) remainingText.style.display = "none";
+
     debugLog("OPENING", "タイトル画面を初期化");
 }
 
@@ -297,10 +317,8 @@ async function selectLevel(level, target) {
     timeLeft = 15;
     timeText.textContent = timeLeft;
 
-    if (remainingText) {
-        remainingText.style.display = "block";
-        updateRemainingCount();
-    }
+    // 難易度は運営側だけで設定し、ゲーム画面の表示はまだ出さない
+    updateRemainingCount();
 
     debugLog("LEVEL SELECT", {
         level: selectedLevel,
@@ -702,7 +720,12 @@ function startCountdown() {
     setTimeout(() => {
         if (!isCountingDown) return;
 
-        setCountdownDisplay("START!!");
+        setCountdownDisplay("スタート!!");
+
+        if (levelSelectScreen) {
+            levelSelectScreen.classList.add("startBlast");
+        }
+
         startGame();
 
         debugLog("COUNTDOWN", "START");
@@ -712,6 +735,7 @@ function startCountdown() {
     setTimeout(() => {
 
         if (levelSelectScreen) {
+            levelSelectScreen.classList.remove("startBlast");
             levelSelectScreen.classList.add("openingFinished");
 
             setTimeout(() => {
@@ -732,6 +756,13 @@ function startGame() {
     gameStarted = true;
     debugLog("GAME", "開始");
     isCountingDown = false;
+
+    const infoPanel = document.getElementById("info");
+    if (infoPanel) infoPanel.style.display = "flex";
+    if (remainingText) {
+        remainingText.style.display = "block";
+        updateRemainingCount();
+    }
 
     timeLeft = 15;
     timeText.textContent = timeLeft;
@@ -1667,7 +1698,7 @@ function animate() {
     updateExplosion(deltaSeconds);
 
     updateCameraShake();
-    updateBossFly(deltaSeaconds);
+    updateBossFly(deltaSeconds);
     updateStar(deltaSeconds);
     updateGameClear();
     updateConfetti(deltaSeconds);
