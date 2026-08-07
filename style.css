@@ -1277,3 +1277,569 @@ canvas {
         font-size: clamp(72px, 19vw, 140px);
     }
 }
+
+/* =====================================================
+   仲間のあかし・復活演出
+===================================================== */
+
+#revivalOverlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 850;
+
+    display: none;
+    overflow: hidden;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255, 184, 35, 0.08),
+            rgba(0, 0, 0, 0.82) 70%
+        );
+}
+
+#revivalOverlay.isActive {
+    display: block;
+
+    animation:
+        revivalOverlayIn
+        0.7s ease-out both;
+}
+
+.revivalLight {
+    --x: 50%;
+    --y: 50%;
+    --delay: 0s;
+    --size: 8px;
+
+    position: absolute;
+
+    left: var(--x);
+    top: var(--y);
+
+    width: var(--size);
+    height: var(--size);
+
+    border-radius: 50%;
+
+    background: #fff7b0;
+
+    box-shadow:
+        0 0 8px #fff,
+        0 0 18px #ffd43b,
+        0 0 35px #ff7a00;
+
+    opacity: 0;
+
+    animation:
+        revivalLightAppear
+        1.8s var(--delay)
+        ease-in-out infinite alternate;
+}
+
+#revivalOverlay.isGathering
+.revivalLight {
+    animation:
+        revivalLightGather
+        1.25s var(--delay)
+        ease-in-out infinite;
+}
+
+#revivalOverlay.isPressed {
+    animation:
+        revivalPressFlash
+        0.2s ease-out;
+}
+
+#revivalOverlay.isComplete {
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255, 255, 210, 0.7),
+            rgba(255, 140, 0, 0.25) 35%,
+            rgba(0, 0, 0, 0.82) 72%
+        );
+
+    animation:
+        revivalCompleteFlash
+        0.9s ease-out both;
+}
+
+.revivalMessage,
+.revivalCounterScreen,
+.revivalComplete {
+    position: fixed;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    z-index: 900;
+
+    width: min(90vw, 900px);
+
+    text-align: center;
+
+    pointer-events: none;
+}
+
+.revivalSymbol {
+    margin-bottom: 10px;
+
+    color: #fff7ae;
+
+    font-size: clamp(58px, 8vw, 110px);
+
+    text-shadow:
+        0 0 15px white,
+        0 0 35px #ffd000,
+        0 0 65px #ff7a00;
+
+    animation:
+        revivalSymbolPulse
+        0.6s ease-in-out
+        infinite alternate;
+}
+
+.revivalMainText {
+    color: #fff1a0;
+
+    font-size:
+        clamp(48px, 7vw, 96px);
+
+    font-weight: 900;
+    line-height: 1.05;
+
+    -webkit-text-stroke:
+        3px #783100;
+
+    text-shadow:
+        0 0 12px white,
+        0 0 28px #ffd000,
+        0 0 55px #ff6800,
+        5px 5px 0 #632500;
+
+    animation:
+        revivalTitleIn
+        0.65s cubic-bezier(
+            0.2, 1.5, 0.4, 1
+        ) both;
+}
+
+.revivalSubText {
+    color: white;
+
+    font-size:
+        clamp(42px, 6vw, 82px);
+
+    font-weight: 900;
+    line-height: 1.1;
+
+    -webkit-text-stroke:
+        3px #7a3500;
+
+    text-shadow:
+        0 0 15px #fff4a0,
+        0 0 38px #ffb000,
+        5px 5px 0 #5d2400;
+
+    animation:
+        revivalTitleIn
+        0.65s ease-out both;
+}
+
+.revivalCounterLabel {
+    margin-bottom: 4px;
+
+    color: #fff;
+
+    font-size:
+        clamp(25px, 3vw, 42px);
+
+    font-weight: 900;
+
+    text-shadow:
+        3px 3px 0 #6c2800,
+        0 0 16px #ff9d00;
+}
+
+.revivalCounterNumber {
+    color: #ffe96b;
+
+    font-size:
+        clamp(70px, 12vw, 170px);
+
+    font-weight: 900;
+    line-height: 0.95;
+
+    -webkit-text-stroke:
+        4px #762c00;
+
+    text-shadow:
+        0 0 18px white,
+        0 0 42px #ffc400,
+        0 0 75px #ff5200,
+        7px 7px 0 #5a2100;
+}
+
+#revivalNumber {
+    display: inline-block;
+
+    min-width: 1.2em;
+}
+
+#revivalNumber.isHit {
+    animation:
+        revivalNumberHit
+        0.22s ease-out;
+}
+
+.revivalCounterGuide {
+    margin-top: 20px;
+
+    color: white;
+
+    font-size:
+        clamp(28px, 4vw, 52px);
+
+    font-weight: 900;
+
+    text-shadow:
+        3px 3px 0 #642500,
+        0 0 18px #ffab00;
+}
+
+.revivalCompleteTop {
+    color: white;
+
+    font-size:
+        clamp(30px, 4vw, 55px);
+
+    font-weight: 900;
+
+    text-shadow:
+        3px 3px 0 #6b2800,
+        0 0 18px #ffb000;
+}
+
+.revivalCompleteMain {
+    margin-top: 5px;
+
+    color: #fff38a;
+
+    font-size:
+        clamp(65px, 10vw, 145px);
+
+    font-weight: 900;
+    line-height: 0.95;
+
+    -webkit-text-stroke:
+        4px #793000;
+
+    text-shadow:
+        0 0 18px white,
+        0 0 45px #ffd000,
+        0 0 80px #ff5900,
+        7px 7px 0 #5e2200;
+
+    animation:
+        revivalCompletePop
+        0.7s cubic-bezier(
+            0.2, 1.6, 0.3, 1
+        ) both;
+}
+
+@keyframes revivalOverlayIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes revivalLightAppear {
+    from {
+        opacity: 0.25;
+        transform: scale(0.6);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.6);
+    }
+}
+
+@keyframes revivalLightGather {
+    0% {
+        opacity: 0.2;
+        transform:
+            translate(0, 0)
+            scale(0.7);
+    }
+
+    100% {
+        opacity: 1;
+        left: 50%;
+        top: 58%;
+
+        transform:
+            translate(-50%, -50%)
+            scale(0.2);
+    }
+}
+
+@keyframes revivalPressFlash {
+    from {
+        filter: brightness(2.3);
+    }
+
+    to {
+        filter: brightness(1);
+    }
+}
+
+@keyframes revivalCompleteFlash {
+    0% {
+        opacity: 1;
+        filter: brightness(3);
+    }
+
+    100% {
+        opacity: 1;
+        filter: brightness(1);
+    }
+}
+
+@keyframes revivalSymbolPulse {
+    from {
+        transform: scale(0.92);
+    }
+
+    to {
+        transform: scale(1.12);
+    }
+}
+
+@keyframes revivalTitleIn {
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(30px)
+            scale(0.7);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+}
+
+@keyframes revivalNumberHit {
+    0% {
+        transform: scale(1.7);
+        color: white;
+    }
+
+    100% {
+        transform: scale(1);
+        color: #ffe96b;
+    }
+}
+
+@keyframes revivalCompletePop {
+    0% {
+        opacity: 0;
+
+        transform:
+            scale(0.35)
+            rotate(-4deg);
+    }
+
+    65% {
+        opacity: 1;
+
+        transform:
+            scale(1.15)
+            rotate(2deg);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+            scale(1)
+            rotate(0);
+    }
+}
+
+/* =====================================================
+   復活演出・文字バランス調整
+===================================================== */
+
+.revivalMessage,
+.revivalCounterScreen,
+.revivalComplete {
+    width: min(88vw, 920px);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+}
+
+
+/* -----------------------------------------------------
+   仲間のあかしが光った
+----------------------------------------------------- */
+
+.revivalSymbol {
+    margin: 0 0 22px;
+
+    font-size: clamp(
+        58px,
+        7vw,
+        100px
+    );
+}
+
+
+.revivalMainText {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 10px;
+
+    font-size: clamp(
+        44px,
+        5.5vw,
+        78px
+    );
+
+    line-height: 1.15;
+
+    letter-spacing: 0.04em;
+}
+
+
+.revivalMainText span {
+    display: block;
+    white-space: nowrap;
+}
+
+
+/* -----------------------------------------------------
+   みんなが力を送ってくれた
+----------------------------------------------------- */
+
+.revivalSubText {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 12px;
+
+    font-size: clamp(
+        42px,
+        5.2vw,
+        74px
+    );
+
+    line-height: 1.15;
+
+    letter-spacing: 0.03em;
+}
+
+
+.revivalSubText span {
+    display: block;
+    white-space: nowrap;
+}
+
+
+/* -----------------------------------------------------
+   あと3回
+----------------------------------------------------- */
+
+.revivalCounterScreen {
+    gap: 18px;
+}
+
+
+.revivalCounterLabel {
+    margin: 0;
+
+    font-size: clamp(
+        30px,
+        3.4vw,
+        48px
+    );
+
+    line-height: 1;
+}
+
+
+.revivalCounterNumber {
+    display: flex;
+
+    align-items: baseline;
+    justify-content: center;
+
+    gap: 15px;
+
+    margin: 0;
+
+    line-height: 0.9;
+}
+
+
+#revivalNumber {
+    min-width: auto;
+
+    font-size: clamp(
+        105px,
+        15vw,
+        210px
+    );
+
+    line-height: 0.8;
+}
+
+
+.revivalCounterSmall {
+    font-size: clamp(
+        36px,
+        4.5vw,
+        62px
+    );
+
+    line-height: 1;
+
+    color: #fff5ad;
+}
+
+
+.revivalCounterGuide {
+    margin: 10px 0 0;
+
+    font-size: clamp(
+        30px,
+        3.8vw,
+        50px
+    );
+
+    line-height: 1;
+}
