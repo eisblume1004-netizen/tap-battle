@@ -1,3 +1,11 @@
+@font-face {
+    font-family: "Ranobe";
+    src: url("./fonts/LightNovelPOPv2.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+
 :root {
     --gold: #ffe066;
     --gold-light: #fff6a6;
@@ -14,6 +22,7 @@ html,
 body {
     width: 100%;
     height: 100%;
+    font-family:"Ranobe", sans-serif;
 }
 
 body {
