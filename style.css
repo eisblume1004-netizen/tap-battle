@@ -1852,3 +1852,29 @@ canvas {
 
     line-height: 1;
 }
+/* =====================================================
+   ゲーム文字をラノベPOPv2に統一
+===================================================== */
+
+#openingTitle,
+#openingSubtitle,
+#openingCountdown,
+#openingStartSub,
+#message,
+#remaining,
+#info,
+.resultScreen,
+.resultTitle,
+.resultCount,
+.resultSubText,
+.great1Label,
+.great2Label,
+.revivalMainText,
+.revivalSubText,
+.revivalCounterLabel,
+.revivalCounterNumber,
+.revivalCounterGuide,
+.revivalCompleteTop,
+.revivalCompleteMain {
+    font-family: "Ranobe", sans-serif !important;
+}
